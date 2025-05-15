@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Построение КС логических функций</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .function-container {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .symbol-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .symbol-button:hover {
+            background-color: #e0e0e0;
+        }
+        .add-button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .remove-button {
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .remove-button:hover {
+            background-color: #d32f2f;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-button {
+            padding: 8px 12px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .clear-button:hover {
+            background-color: #e68a00;
+        }
+        .keyboard-container {
+            display: none;
+        }
+        .active-keyboard {
+            display: block;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .build-button {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .build-button:hover {
+            background-color: #0b7dda;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #controls {
+            padding: 10px;
+            background: #f0f0f0;
+            overflow-y: auto;
+            max-height: 50vh;
+        }
+        #graph-container {
+            flex-grow: 1;
+            background: white;
+        }
+        button {
+            padding: 10px 15px;
+            background: #2196F3;
+            color: black;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        button:hover {
+            background: #2196F3;
+        }
+        .sigma-edge-label {
+            font-size: 12px;
+            fill: #333;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.2.1/sigma.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.2.1/plugins/sigma.renderers.edgeLabels.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.2.1/plugins/sigma.plugins.dragNodes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/1.2.1/plugins/sigma.layout.forceAtlas2.min.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h2>Контактные схемы для логических функций</h2>
+	    <h5>Этот калькулятор строит полные КС для непустой системы логических функций. Функции могут быть заданы в виде логического выражения или вектора значений. Неизвестные переменные будут автоматически названы `d`. При записи логического выражения не допускается пропуск операций. Входы КС обозначены красным цветом, выходы 0 и 1 окрашены зеленым цветом.</h5>
+            <div id="functions-container">
+                <div class="function-container" id="function-1">
+                    <input type="text" class="input-field" id="input-1" placeholder="Введите логическую функцию">
+                    <button class="clear-button">Очистить</button>
+                    <div class="keyboard-container active-keyboard" id="keyboard-1">
+                        <div class="button-row">
+                            <button class="symbol-button" data-symbol="x1">x1</button>
+                            <button class="symbol-button" data-symbol="x2">x2</button>
+                            <button class="symbol-button" data-symbol="x3">x3</button>
+                            <button class="symbol-button" data-symbol="x4">x4</button>
+                            <button class="symbol-button" data-symbol="(">(</button>
+			    <button class="symbol-button" data-symbol=")">)</button>
+                        </div>
+                        <div class="button-row">
+                            <button class="symbol-button" data-symbol="∧">∧</button>
+                            <button class="symbol-button" data-symbol="∨">∨</button>
+                            <button class="symbol-button" data-symbol="¬">¬</button>
+                            <button class="symbol-button" data-symbol="⊕">⊕</button>
+                            <button class="symbol-button" data-symbol="≡">≡</button>
+                            <button class="symbol-button" data-symbol="|">|</button>
+                            <button class="symbol-button" data-symbol="→">→</button>
+                            <button class="symbol-button" data-symbol="↓">↓</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="add-function" class="add-button">Добавить функцию</button>
+                <button id="build-knf" class="build-button">Построить КС</button>
+                <button id="reset-layout" class="build-button">Расставить заново</button>
+            </div>
+        </div>
+        
+        <div id="graph-container"></div>
+    </div>
+    <script>
+        const logicalOps = ["∧", "∨", "⊕", "↓", "|", "→", "≡", "(", ")", "¬"];
+        
+        class Expr {
+            static Var(varname) { return { type: "Var", varname }; }
+            static Eq(left, right) { return { type: "Eq", left, right }; }
+            static Impl(left, right) { return { type: "Impl", left, right }; }
+            static Nor(left, right) { return { type: "Nor", left, right }; }
+            static Nand(left, right) { return { type: "Nand", left, right }; }
+            static Xor(left, right) { return { type: "Xor", left, right }; }
+            static And(left, right) { return { type: "And", left, right }; }
+            static Or(left, right) { return { type: "Or", left, right }; }
+            static Not(expr) { return { type: "Not", expr }; }
+            static Bool(value) { return { type: "Bool", value }; }
+        }
+        
+        function depleteFunc(s) {
+	    console.log("Depleted func: ", s);
+            return getToken(s, "", []);
+        }
+        
+        function getToken(s, current, result) {
+            if (s === "") {
+                return current === "" ? result.reverse() : [current, ...result].reverse();
+            }
+            
+            const c = s[0];
+            const cs = s.slice(1);
+            
+            if (logicalOps.includes(c)) {
+                return current === "" 
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, "", [c, current, ...result]);
+            } else if (c === ' ') {
+                return getToken(cs, current, result);
+            } else if (c === '0' || c === '1') {
+                return current === ""
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, current + c, result);
+            } else {
+                return getToken(cs, current + c, result);
+            }
+        }
+        
+        function parseExpr(tokens) {
+	    console.log("parseExpr", tokens);
+            const [expr, remaining] = parseEq(tokens);
+            if (remaining.length !== 0) throw new Error("Unexpected tokens remaining");
+            return expr;
+        }
+        
+        function parseEq(tokens) {
+	    console.log("parseEq", tokens);
+            const [left, rest] = parseImpl(tokens);
+            if (rest[0] === "≡") {
+                const [right, rest2] = parseEq(rest.slice(1));
+                return [Expr.Eq(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseImpl(tokens) {
+	    console.log("parseImpl", tokens);
+            const [left, rest] = parseNor(tokens);
+            if (rest[0] === "→") {
+                const [right, rest2] = parseImpl(rest.slice(1));
+                return [Expr.Impl(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseNor(tokens) {
+	    console.log("parseNor", tokens);
+            const [left, rest] = parseNand(tokens);
+            if (rest[0] === "↓") {
+                const [right, rest2] = parseNor(rest.slice(1));
+                return [Expr.Nor(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseNand(tokens) {
+	    console.log("parseNand", tokens);
+            const [left, rest] = parseXor(tokens);
+            if (rest[0] === "|") {
+                const [right, rest2] = parseNand(rest.slice(1));
+                return [Expr.Nand(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseXor(tokens) {
+	    console.log("parseXor", tokens);
+            const [left, rest] = parseOr(tokens);
+            if (rest[0] === "⊕") {
+                const [right, rest2] = parseXor(rest.slice(1));
+                return [Expr.Xor(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseOr(tokens) {
+	    console.log("parseOr", tokens);
+            const [left, rest] = parseAnd(tokens);
+            if (rest[0] === "∨") {
+                const [right, rest2] = parseOr(rest.slice(1));
+                return [Expr.Or(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseAnd(tokens) {
+	    console.log("parseAnd", tokens);
+            const [left, rest] = parseTerm(tokens);
+            if (rest[0] === "∧") {
+                const [right, rest2] = parseAnd(rest.slice(1));
+                return [Expr.And(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseTerm(tokens) {
+	    console.log("parseTerm", tokens);
+            if (tokens[0] === "(") {
+                const [expr, rest] = parseEq(tokens.slice(1));
+                if (rest[0] !== ")") throw new Error("Expected closing parenthesis");
+                return [expr, rest.slice(1)];
+            } else if (tokens[0] === "¬") {
+                const [expr, rest] = parseTerm(tokens.slice(1));
+                return [Expr.Not(expr), rest];
+            } else if (tokens[0] === "0") {
+                return [Expr.Bool(false), tokens.slice(1)];
+            } else if (tokens[0] === "1") {
+                return [Expr.Bool(true), tokens.slice(1)];
+            } else if (tokens.length > 0 && !logicalOps.includes(tokens[0])) {
+                return [Expr.Var(tokens[0]), tokens.slice(1)];
+            }
+            throw new Error("Error in func");
+        }
+        
+        function extractVars(expr) {
+            const vars = getExpr(expr);
+            return [...new Set(vars)].sort();
+        }
+        
+        function getExpr(expr) {
+            switch (expr.type) {
+                case "Var": return [expr.varname];
+                case "And":
+                case "Or":
+                case "Xor":
+                case "Nand":
+                case "Nor":
+                case "Impl":
+                case "Eq":
+                    return [...getExpr(expr.left), ...getExpr(expr.right)];
+                case "Not": return getExpr(expr.expr);
+                case "Bool": return [];
+                default: throw new Error("Unknown expression type");
+            }
+        }
+        
+        function eval(expr, vars) {
+            const varNames = extractVars(expr);
+            const varMap = new Map(varNames.map((name, i) => [name, vars[i]]));
+            return evalExpr(expr, varMap);
+        }
+        
+        function evalExpr(expr, varMap) {
+            switch (expr.type) {
+                case "Var":
+                    if (!varMap.has(expr.varname)) throw new Error("Unknown variable");
+                    return varMap.get(expr.varname);
+                case "And": return evalExpr(expr.left, varMap) && evalExpr(expr.right, varMap);
+                case "Or": return evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap);
+                case "Xor": return evalExpr(expr.left, varMap) !== evalExpr(expr.right, varMap);
+                case "Nand": return !(evalExpr(expr.left, varMap) && evalExpr(expr.right, varMap));
+                case "Nor": return !(evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap));
+                case "Impl": return !evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap);
+                case "Eq": return evalExpr(expr.left, varMap) === evalExpr(expr.right, varMap);
+                case "Not": return !evalExpr(expr.expr, varMap);
+                case "Bool": return expr.value;
+                default: throw new Error("Unknown expression type");
+            }
+        }
+        
+        function buildFunc(funcString) {
+            const expr = parseExpr(depleteFunc(funcString));
+	    console.log("returned expr:", expr);
+            return vars => eval(expr, vars);
+        }
+        
+        function buildVars(funcString) {
+            if (!funcString) return [];
+            return extractVars(parseExpr(depleteFunc(funcString)));
+        }
+        
+        function buildFuncVector(funcString) {
+            if (!funcString) return [];
+            const vars = buildVars(funcString);
+            return generatePoints(vars.length).map(buildFunc(funcString));
+        }
+        
+        function convertVectorToString(vector) {
+            return vector.map(b => b ? '1' : '0').join('');
+        }
+        
+        function convertStringToVector(str) {
+            return [...str].map(c => c === '1');
+        }
+        
+        function generatePoints(number) {
+            if (number <= 0) return [[]];
+            const rest = generatePoints(number - 1);
+            return [...rest.map(x => [false, ...x]), ...rest.map(x => [true, ...x])];
+        }
+        function prepareFuncs(funcStrings) {
+	    console.log("prepareFuncs", funcStrings);
+            const [normalFuncs, vecFuncs] = sortFuncs(funcStrings);
+            const leveledNormalFuncs = levelFuncs(normalFuncs);
+            console.log("leveledNormalFuncs", leveledNormalFuncs);
+            const builtFuncs = leveledNormalFuncs.map(buildFuncVector);
+            const convertedVecs = vecFuncs.map(convertStringToVector);
+            const allFuncs = [...builtFuncs, ...convertedVecs];
+    
+            const maxVecVars = maxNum(vecFuncs.map(numberOfVars));
+            const maxNormVars = maxNum(leveledNormalFuncs.map(f => buildVars(f).length));
+            const diffVars = maxVecVars - maxNormVars;
+    
+            const defaultVars = genDefaultVars(Math.max(0, diffVars));
+            const normalVars = leveledNormalFuncs.length > 0 ? buildVars(leveledNormalFuncs[0]) : [];
+            const allVars = [...defaultVars, ...normalVars];
+            console.log("Before level all bool funcs", allVars);
+            const leveledFuncsFinal = allFuncs.map(f => levelBoolFuncs(allVars.length, f));
+	    //const leveledFuncsFinal = []
+    
+            return [leveledFuncsFinal, allVars];
+        }
+        
+        function levelBoolFuncs(targetLength, func) {
+	    console.log("before level funcs", targetLength, numberOfVars(func));
+            if (numberOfVars(func) === targetLength) return func;
+            return levelBoolFuncs(targetLength, [...func, ...func]);
+        }
+        
+        function sortFuncs(funcStrings) {
+            if (funcStrings.length === 0) return [[], []];
+            const [first, ...rest] = funcStrings;
+            const [norm, vec] = sortFuncs(rest);
+            return isVector(first) ? [norm, [first, ...vec]] : [[first, ...norm], vec];
+        }
+        
+        function levelFuncs(funcStrings) {
+            if (funcStrings.length === 0) return [];
+            const allVars = [...new Set(funcStrings.flatMap(f => buildVars(f)))];
+            return funcStrings.map(f => addMissing(f, buildVars(f), allVars));
+        }
+        
+        function addMissing(funcString, vars, allVars) {
+            const missedVars = allVars.filter(v => !vars.includes(v));
+            return missedVars.reduce(
+                (s, v) => `(${s})∨${v}∧¬${v}`,
+                `(${funcString})`
+            );
+        }
+        
+        function maxNum(list) {
+            return list.length > 0 ? Math.max(...list) : 0;
+        }
+        
+        function isVector(str) {
+            return [...str].every(c => c === '0' || c === '1');
+        }
+        
+        function numberOfVars(func) {
+	    console.log("numberofvars", func);
+            return func.length === 0 ? 0 : Math.floor(Math.log2(func.length));
+        }
+        
+        function genDefaultVars(number) {
+            return number > 0 ? Array.from({length: number}, (_, i) => `d${i+1}`) : [];
+        }
+        
+        class Vertex {
+            constructor(func, name, relations, input) {
+                this.func = func;
+                this.name = name;
+                this.relations = relations || [];
+                this.input = input || null;
+            }
+        }
+        
+        function buildCS(funcStrings) {
+            const [funcs, vars] = prepareFuncs(funcStrings);
+            const sets = initFullCascadeMethod(funcs, vars).reverse();
+            const optimized = optimizeGraph(flattenVertices(sets).reverse());
+            return `{"nodes":${generateNodes(optimized)},"edges":${generateEdges(optimized)}}`;
+        }
+        
+        function makeNode(name, number, vecString, input) {
+            if (input) {
+                return `{"id":"${name}","label":"${input}: ${vecString}","size":2.0,"color":"red"}`;
+            }
+	    if (vecString === `0` || vecString === `1`) {
+                return `{"id":"${name}","label":"end: ${vecString}","size":2.0,"color":"green"}`;
+	    }
+            return `{"id":"${name}","label":"n${number}: ${vecString}","size":2.0}`;
+        }
+        
+        function makeEdge(number, label, target, source) {
+            return `{"id":"e${number}","label":"${label}","source":"${source}","target":"${target}"}`;
+        }
+        
+        function buildJsonArray(items) {
+            return `[${items.join(",")}]`;
+        }
+        
+        function generateNodes(vertices) {
+            const nodes = vertices.map((v, i) => 
+                makeNode(v.name, i+1, convertVectorToString(v.func), v.input)
+            );
+            return buildJsonArray(nodes);
+        }
+        
+        function generateEdges(vertices) {
+            const edges = [];
+            let edgeCount = 1;
+            for (const v of vertices) {
+                for (const [target, label] of v.relations) {
+                    edges.push(makeEdge(edgeCount++, label, v.name, target));
+                }
+            }
+            return buildJsonArray(edges);
+        }
+        
+        function flattenVertices(vertices) {
+            return vertices.flat();
+        }
+        
+        function optimizeGraph(vertices) {
+	    console.log("beforeOptimize", vertices);
+            if (vertices.length === 0) return [];
+            
+            const [v, ...vs] = vertices;
+            const toOptimize = pairsToOptimize(v.relations);
+            
+            if (toOptimize.length === 0) {
+                return [v, ...optimizeGraph(vs)];
+            }
+            
+            const toRemove = vs.filter(u => toOptimize.includes(u.name));
+            const toKeep = vs.filter(u => !toOptimize.includes(u.name));
+            
+            return optimizeGraph([optimizeVertex(v, toOptimize, toRemove), ...toKeep]);
+        }
+        
+        function optimizeVertex(vertex, toRemove, toAdd) {
+            const filteredRelations = removeRelations(vertex.relations, toRemove);
+            const addedRelations = addRelations(filteredRelations, toAdd);
+            const combinedInput = combineMaybes(toAdd.map(v => v.input));
+            
+            return new Vertex(
+                vertex.func,
+                vertex.name,
+                addedRelations,
+                combinedInput
+            );
+        }
+        
+        function removeRelations(relations, toRemove) {
+            return relations.filter(([target]) => !toRemove.includes(target));
+        }
+        
+        function addRelations(relations, vertices) {
+            return [...relations, ...vertices.flatMap(v => v.relations)];
+        }
+        
+        function pairsToOptimize(pairs) {
+            const targets = [];
+            for (let i = 0; i < pairs.length; i++) {
+                const [a, b1] = pairs[i];
+                for (let j = i+1; j < pairs.length; j++) {
+                    const [c, b2] = pairs[j];
+                    if (a === c && isSpecialPair(b1, b2)) {
+                        targets.push(a);
+                    }
+                }
+            }
+            return targets;
+        }
+        
+        function isSpecialPair(s1, s2) {
+            return (s1 === `!${s2}`) || (s2 === `!${s1}`);
+        }
+        
+        function initFullCascadeMethod(funcs, vars) {
+            const initialSet = [funcs.map((f, i) => 
+                new Vertex(f, `f${i+1}`, [], `f${i+1}`)
+            )];
+            return cascadeMethod(vars, funcs[0].length / 2, initialSet);
+        }
+        
+        function cascadeMethod(vars, n, sets) {
+            if (n === 1) {
+                return [cascadeMethodStep(vars[0], sets[0]), ...sets];
+            }
+            return cascadeMethod(vars.slice(1), Math.floor(n / 2), [
+                cascadeMethodStep(vars[0], sets[0]),
+                ...sets
+            ]);
+        }
+        
+        function cascadeMethodStep(varName, vertices) {
+            if (vertices.length === 0) return [];
+            const [x, ...xs] = vertices;
+            const split = splitHalf(varName, x);
+            return split.reduceRight(
+                (acc, newVertex) => checkAndAdd(newVertex, acc),
+                cascadeMethodStep(varName, xs)
+            );
+        }
+        
+        function checkAndAdd(newVertex, vertices) {
+            if (vertices.length === 0) return [newVertex];
+            const [v, ...vs] = vertices;
+            if (JSON.stringify(v.func) === JSON.stringify(newVertex.func)) {
+                return [{
+                    ...v,
+                    relations: [...v.relations, ...newVertex.relations]
+                }, ...vs];
+            }
+            return [v, ...checkAndAdd(newVertex, vs)];
+        }
+        
+        function splitHalf(varName, vertex) {
+            const half = Math.floor(vertex.func.length / 2);
+            const left = vertex.func.slice(0, half);
+            const right = vertex.func.slice(half);
+            
+            if (JSON.stringify(left) === JSON.stringify(right)) {
+                return [new Vertex(
+                    left,
+                    `${vertex.name}2`,
+                    [[vertex.name, `!${varName}`], [vertex.name, varName]],
+                    null
+                )];
+            }
+            
+            return [
+                new Vertex(left, `${vertex.name}0`, [[vertex.name, `!${varName}`]], null),
+                new Vertex(right, `${vertex.name}1`, [[vertex.name, varName]], null)
+            ];
+        }
+        
+        function combineMaybes(maybes) {
+            return maybes.reduce((acc, m) => {
+                if (!m) return acc;
+                return acc ? `${acc} ${m}` : m;
+            }, null);
+        } 
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let functionCount = 1;
+            let activeInputId = 'input-1';
+            let s = null;
+            let forceAtlas2 = null;
+            
+            function setActiveInput(inputId) {
+                activeInputId = inputId;
+                document.querySelectorAll('.keyboard-container').forEach(kb => {
+                    kb.classList.remove('active-keyboard');
+                });
+                const functionContainer = document.getElementById(inputId).closest('.function-container');
+                const keyboard = functionContainer.querySelector('.keyboard-container');
+                keyboard.classList.add('active-keyboard');
+            }
+            
+            function insertSymbol(symbol) {
+                const activeInput = document.getElementById(activeInputId);
+                if (activeInput) {
+                    const startPos = activeInput.selectionStart;
+                    const endPos = activeInput.selectionEnd;
+                    const currentValue = activeInput.value;
+                    
+                    activeInput.value = currentValue.substring(0, startPos) + symbol + currentValue.substring(endPos);
+                    
+                    setTimeout(() => {
+                        activeInput.selectionStart = activeInput.selectionEnd = startPos + symbol.length;
+                        activeInput.focus();
+                    }, 0);
+                }
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('symbol-button')) {
+                    const symbol = e.target.getAttribute('data-symbol');
+                    insertSymbol(symbol);
+                }
+                
+                if (e.target.classList.contains('clear-button')) {
+                    const functionContainer = e.target.closest('.function-container');
+                    const inputField = functionContainer.querySelector('.input-field');
+                    inputField.value = '';
+                    inputField.focus();
+                    setActiveInput(inputField.id);
+                }
+            });
+            
+            document.addEventListener('focusin', function(e) {
+                if (e.target.classList.contains('input-field')) {
+                    setActiveInput(e.target.id);
+                }
+            });
+            
+            document.getElementById('add-function').addEventListener('click', function() {
+                functionCount++;
+                const newFunction = document.createElement('div');
+                newFunction.className = 'function-container';
+                newFunction.id = `function-${functionCount}`;
+                
+                newFunction.innerHTML = `
+                    <input type="text" class="input-field" id="input-${functionCount}" placeholder="Введите логическую функцию">
+                    <button class="clear-button">Очистить</button>
+                    <div class="keyboard-container" id="keyboard-${functionCount}">
+                        <div class="button-row">
+                            <button class="symbol-button" data-symbol="x1">x1</button>
+                            <button class="symbol-button" data-symbol="x2">x2</button>
+                            <button class="symbol-button" data-symbol="x3">x3</button>
+                            <button class="symbol-button" data-symbol="x4">x4</button>
+                            <button class="symbol-button" data-symbol="(">(</button>
+                            <button class="symbol-button" data-symbol=")">)</button>
+                        </div>
+                        <div class="button-row">
+                            <button class="symbol-button" data-symbol="∧">∧</button>
+                            <button class="symbol-button" data-symbol="∨">∨</button>
+                            <button class="symbol-button" data-symbol="¬">¬</button>
+                            <button class="symbol-button" data-symbol="⊕">⊕</button>
+                            <button class="symbol-button" data-symbol="≡">≡</button>
+                            <button class="symbol-button" data-symbol="|">|</button>
+                            <button class="symbol-button" data-symbol="→">→</button>
+                            <button class="symbol-button" data-symbol="↓">↓</button>
+                        </div>
+                    </div>
+                    <button class="remove-button">Удалить функцию</button>
+                `;
+                
+                document.getElementById('functions-container').appendChild(newFunction);
+                
+                const newInput = document.getElementById(`input-${functionCount}`);
+                newInput.focus();
+                setActiveInput(newInput.id);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-button')) {
+                    const functionContainer = e.target.closest('.function-container');
+                    if (functionContainer && functionContainer.id !== 'function-1') {
+                        functionContainer.remove();
+                    }
+                }
+            });
+            
+            document.getElementById('build-knf').addEventListener('click', function() {
+                const functions = [];
+		const invalidFunctions = [];
+                document.querySelectorAll('.input-field').forEach((input, index) => {
+		    const func = input.value.trim();
+                    if (func !== '') {
+			if (/^[01]+$/.test(func)) {
+			    if ((func.length & (func.length - 1)) !== 0) {
+				invalidFunctions.push({
+				    index: index + 1,
+				    func: func,
+				    error: `Vector length must be power of two, got: ${func.length}`
+				});
+				return;
+			    }
+			}
+                        functions.push(input.value.trim());
+                    }
+                });
+		if (invalidFunctions.length > 0) {
+		    showVectorErrors(invalidFunctions);
+		    return;
+		}
+                if (functions.length === 0) {
+                    alert("Пожалуйста, введите хотя бы одну функцию");
+                    return;
+                }
+                console.log("Functions", functions);
+                const graphData = convertFunctionsToGraph(functions);
+                
+                drawTree(graphData);
+            });
+
+            setActiveInput('input-1');
+
+	    function showVectorErrors(invalidFunctions) {
+                let errorMessage = "Found errors in functions:\n\n";
+                
+                invalidFunctions.forEach(item => {
+                    errorMessage += `Function ${item.index}: "${item.func}"\n`;
+                    errorMessage += `Error: ${item.error}\n\n`;
+                });
+                
+                errorMessage += "Please correct function";
+                
+                alert(errorMessage);
+                
+                document.querySelectorAll('.input-field').forEach((input, index) => {
+                    const func = input.value.trim();
+                    if (/^[01]+$/.test(func) && func.length % 8 !== 0) {
+                        input.style.border = "2px solid red";
+                        setTimeout(() => {
+                            input.style.border = "";
+                        }, 3000);
+                    }
+                });
+            }
+            
+            function drawTree(graphData) {
+                stopForceLayout();
+                
+                const container = document.getElementById('graph-container');
+                container.innerHTML = '';
+                
+                s = new sigma({
+                    renderer: {
+                        container: container,
+                        type: 'canvas',
+                        settings: {
+                            edgeLabels: true,
+                            edgeLabelSize: 'proportional'
+                        }
+                    },
+                    settings: {
+                        minNodeSize: 5,
+                        maxNodeSize: 20,
+                        minEdgeSize: 0.5,
+                        maxEdgeSize: 1,
+                        enableEdgeHovering: true,
+                        edgeHoverColor: 'edge',
+                        defaultEdgeHoverColor: '#000',
+                        edgeHoverSizeRatio: 1,
+                        edgeHoverExtremities: true,
+                        edgeLabelSize: 'fixed',
+                        edgeLabelSizeRatio: 1,
+                        defaultEdgeLabelSize: 10,
+                        edgeLabelColor: 'default',
+                        defaultEdgeLabelColor: '#333',
+                        edgeLabelActiveColor: 'default',
+                        defaultEdgeLabelActiveColor: '#333',
+                        edgeLabelAlignment: 'horizontal',
+                        enableHovering: false,
+                        defaultLabelColor: '#000',
+                        defaultLabelSize: 12,
+                        labelThreshold: 5,
+                        mouseEnabled: true
+                    }
+                });
+
+                sigma.plugins.dragNodes(s, s.renderers[0]);
+
+                graphData.nodes.forEach(node => {
+                    s.graph.addNode({
+                        id: node.id,
+                        label: node.label || node.id,
+                        size: Math.min(5 + (node.size || 10), 15),
+                        color: node.color || '#61a0d0',
+                        x: Math.random() * 0.1,
+                        y: Math.random() * 0.1
+                    });
+                });
+
+                graphData.edges.forEach(edge => {
+                    s.graph.addEdge({
+                        id: edge.source + '-' + edge.target,
+                        source: edge.source,
+                        target: edge.target,
+                        color: edge.color || '#ccc',
+                        size: 0.5,
+                        label: edge.label || '',
+                        type: 'arrow'
+                    });
+                });
+
+                resetLayout();
+                
+                if (graphData.nodes.length > 50) {
+                    startForceLayout();
+                }
+            }
+            
+            function resetLayout() {
+                if (!s) return;
+                
+                stopForceLayout();
+                
+                const graphData = {
+                    nodes: s.graph.nodes(),
+                    edges: s.graph.edges()
+                };
+
+                if (graphData.nodes.length <= 50) {
+                    applyHierarchicalLayout(graphData);
+                } else {
+                    applyCircularLayout(graphData);
+                }
+                
+                s.refresh();
+                s.camera.goTo({
+                    x: 0,
+                    y: 0,
+                    angle: 0,
+                    ratio: 1
+                });
+            }
+            
+            function startForceLayout() {
+                if (!s) return;
+                
+                forceAtlas2 = sigma.layouts.forceAtlas2.configure(s, {
+                    worker: true,
+                    background: true,
+                    scaleRatio: 1,
+                    gravity: 1,
+                    barnesHutOptimize: true,
+                    barnesHutTheta: 0.5,
+                    adjustSizes: true,
+                    iterationsPerRender: 1,
+                    slowDown: 10,
+                    outboundAttractionDistribution: false
+                });
+                
+                forceAtlas2.start();
+            }
+            
+            function stopForceLayout() {
+                if (forceAtlas2) {
+                    forceAtlas2.stop();
+                    forceAtlas2 = null;
+                }
+            }
+            
+            function applyHierarchicalLayout(graphData) {
+                let rootNodeId = null;
+                const allTargets = new Set(graphData.edges.map(edge => edge.target));
+            
+                graphData.nodes.forEach(node => {
+                    if (!allTargets.has(node.id)) {
+                        rootNodeId = node.id;
+                    }
+                });
+
+                if (!rootNodeId) {
+                    rootNodeId = graphData.nodes[0].id;
+                }
+
+                const levels = {};
+                const nodeDepths = {};
+                const positions = {};
+            
+                const queue = [{id: rootNodeId, depth: 0}];
+                const visited = new Set();
+            
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    if (visited.has(current.id)) continue;
+                
+                    visited.add(current.id);
+                    nodeDepths[current.id] = current.depth;
+                
+                    if (!levels[current.depth]) {
+                        levels[current.depth] = [];
+                    }
+                    levels[current.depth].push(current.id);
+                
+                    const children = graphData.edges
+                        .filter(edge => edge.source === current.id)
+                        .map(edge => edge.target);
+                
+                    children.forEach(childId => {
+                        queue.push({id: childId, depth: current.depth + 1});
+                    });
+                }
+            
+                const maxDepth = Object.keys(levels).length;
+                const levelHeight = maxDepth > 1 ? 2 / (maxDepth - 1) : 2;
+            
+                Object.keys(levels).forEach(depth => {
+                    const nodesInLevel = levels[depth];
+                    const nodeCount = nodesInLevel.length;
+                    const levelWidth = 2;
+                    const nodeSpacing = nodeCount > 1 ? levelWidth / (nodeCount + 1) : levelWidth / 2;
+                
+                    nodesInLevel.forEach((nodeId, index) => {
+                        const x = -1 + (index + 1) * nodeSpacing;
+                        const y = 1 - depth * levelHeight;
+                        positions[nodeId] = {x, y};
+                    });
+                });
+            
+                s.graph.nodes().forEach(node => {
+                    if (positions[node.id]) {
+                        node.x = positions[node.id].x;
+                        node.y = positions[node.id].y;
+                    } else {
+                        node.x = Math.random() * 2 - 1;
+                        node.y = Math.random() * 2 - 1;
+                    }
+                });
+            }
+            
+            function applyCircularLayout(graphData) {
+                const nodes = graphData.nodes;
+                const radius = Math.min(1, Math.sqrt(nodes.length) * 0.5);
+                const angleStep = (2 * Math.PI) / nodes.length;
+            
+                nodes.forEach((node, index) => {
+                    const angle = index * angleStep;
+                    node.x = radius * Math.cos(angle);
+                    node.y = radius * Math.sin(angle);
+                });
+            }
+            
+            document.getElementById('reset-layout').addEventListener('click', function() {
+                if (s) {
+                    resetLayout();
+                }
+            });
+            
+            function convertFunctionsToGraph(functions) {
+                console.log("Получены функции:", functions);
+                
+                return JSON.parse(buildCS(functions))
+            }
+        });
+    </script>
+</body>
+</html>
