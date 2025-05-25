@@ -30,41 +30,20 @@
             margin-bottom: 5px;
         }
         .symbol-button {
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 8px 15px;
             cursor: pointer;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
         }
         .symbol-button:hover {
             background-color: #e0e0e0;
         }
         .add-button {
-            padding: 10px 15px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 15px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .add-button:hover {
-            background-color: #45a049;
         }
         .remove-button {
-            padding: 5px 10px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 15px;
             cursor: pointer;
-            font-size: 14px;
             margin-top: 5px;
-        }
-        .remove-button:hover {
-            background-color: #d32f2f;
         }
         .button-container {
             display: flex;
@@ -72,16 +51,8 @@
             align-items: center;
         }
         .clear-button {
-            padding: 8px 12px;
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 15px;
             cursor: pointer;
-            font-size: 14px;
-        }
-        .clear-button:hover {
-            background-color: #e68a00;
         }
         .keyboard-container {
             display: none;
@@ -95,18 +66,9 @@
             margin-top: 10px;
         }
         .build-button {
-            padding: 10px 15px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 15px;
             cursor: pointer;
-            font-size: 16px;
         }
-        .build-button:hover {
-            background-color: #0b7dda;
-        }
-
         #container {
             display: flex;
             flex-direction: column;
@@ -123,16 +85,10 @@
             background: white;
         }
         button {
-            padding: 10px 15px;
-            background: #2196F3;
-            color: black;
-            border: none;
+            padding: 8px 15px;
             cursor: pointer;
             margin-right: 5px;
             margin-bottom: 5px;
-        }
-        button:hover {
-            background: #2196F3;
         }
         .sigma-edge-label {
             font-size: 12px;
@@ -754,6 +710,16 @@
             document.getElementById('build-knf').addEventListener('click', function() {
                 const functions = [];
 		const invalidFunctions = [];
+		document.getElementById('reset-layout').addEventListener('click', function() {
+                    if (s) {
+                        resetLayout();
+                    }
+                });
+		document.getElementById('reset-layout').addEventListener('click', () => {
+                    if (this.s) {
+                        this.resetLayout();
+                    }
+                });
                 document.querySelectorAll('.input-field').forEach((input, index) => {
 		    const func = input.value.trim();
                     if (func !== '') {
@@ -892,12 +858,8 @@
                     edges: s.graph.edges()
                 };
 
-                if (graphData.nodes.length <= 50) {
-                    applyHierarchicalLayout(graphData);
-                } else {
-                    applyCircularLayout(graphData);
-                }
-                
+                renderLayersOptimized(assignLayers(graphData));
+
                 s.refresh();
                 s.camera.goTo({
                     x: 0,
@@ -932,98 +894,163 @@
                     forceAtlas2 = null;
                 }
             }
+
+            function assignLayers(graphData) {
+                const { nodes, edges } = graphData;
             
-            function applyHierarchicalLayout(graphData) {
-                let rootNodeId = null;
-                const allTargets = new Set(graphData.edges.map(edge => edge.target));
+                const allTargets = new Set(edges.map(e => e.target));
+                const allSources = new Set(edges.map(e => e.source));
+                const sources = nodes.filter(node => !allTargets.has(node.id)).map(node => node.id);
+                const sinks = nodes.filter(node => !allSources.has(node.id)).map(node => node.id);
             
-                graphData.nodes.forEach(node => {
-                    if (!allTargets.has(node.id)) {
-                        rootNodeId = node.id;
-                    }
+                const layers = [];
+                const inDegree = {};
+                const adjList = {};
+            
+                nodes.forEach(node => inDegree[node.id] = 0);
+                edges.forEach(edge => {
+                    inDegree[edge.target]++;
+                    if (!adjList[edge.source]) adjList[edge.source] = [];
+                    adjList[edge.source].push(edge.target);
                 });
-
-                if (!rootNodeId) {
-                    rootNodeId = graphData.nodes[0].id;
-                }
-
-                const levels = {};
-                const nodeDepths = {};
-                const positions = {};
             
-                const queue = [{id: rootNodeId, depth: 0}];
-                const visited = new Set();
+                const queue = [...sources];
+                layers[0] = [...sources];
+                let currentLayer = 0;
             
                 while (queue.length > 0) {
-                    const current = queue.shift();
-                    if (visited.has(current.id)) continue;
-                
-                    visited.add(current.id);
-                    nodeDepths[current.id] = current.depth;
-                
-                    if (!levels[current.depth]) {
-                        levels[current.depth] = [];
+                    const levelSize = queue.length;
+                    currentLayer++;
+            
+                    for (let i = 0; i < levelSize; i++) {
+                        const u = queue.shift();
+                        if (!adjList[u]) continue;
+            
+                        for (const v of adjList[u]) {
+                            inDegree[v]--;
+                            if (inDegree[v] === 0) {
+                                queue.push(v);
+                                if (!layers[currentLayer]) layers[currentLayer] = [];
+                                layers[currentLayer].push(v);
+                            }
+                        }
                     }
-                    levels[current.depth].push(current.id);
-                
-                    const children = graphData.edges
-                        .filter(edge => edge.source === current.id)
-                        .map(edge => edge.target);
-                
-                    children.forEach(childId => {
-                        queue.push({id: childId, depth: current.depth + 1});
-                    });
                 }
             
-                const maxDepth = Object.keys(levels).length;
-                const levelHeight = maxDepth > 1 ? 2 / (maxDepth - 1) : 2;
-            
-                Object.keys(levels).forEach(depth => {
-                    const nodesInLevel = levels[depth];
-                    const nodeCount = nodesInLevel.length;
-                    const levelWidth = 2;
-                    const nodeSpacing = nodeCount > 1 ? levelWidth / (nodeCount + 1) : levelWidth / 2;
-                
-                    nodesInLevel.forEach((nodeId, index) => {
-                        const x = -1 + (index + 1) * nodeSpacing;
-                        const y = 1 - depth * levelHeight;
-                        positions[nodeId] = {x, y};
-                    });
+                sinks.forEach(sink => {
+                    if (!layers.flat().includes(sink)) {
+                        if (!layers[currentLayer]) layers[currentLayer] = [];
+                        layers[currentLayer].push(sink);
+                    }
                 });
             
+                return { layers, sources, sinks };
+            }
+
+            function renderLayersOptimized(layersData) {
+                if (!s) return;
+                
+                const { layers, sources, sinks } = layersData;
+                const adjList = {};
+                s.graph.edges().forEach(edge => {
+                    if (!adjList[edge.source]) adjList[edge.source] = [];
+                    adjList[edge.source].push(edge.target);
+                });
+                
+                // Оптимизация порядка узлов в слоях
+                const optimizedLayers = optimizeLayerOrder([...layers], adjList);
+                
+                const nodePositions = {};
+                const layerWidth = 2;
+                const layerHeight = optimizedLayers.length > 1 ? 2 / (optimizedLayers.length - 1) : 2;
+                
+                optimizedLayers.forEach((layer, layerIndex) => {
+                    const spacing = layerWidth / (layer.length + 1);
+                    
+                    layer.forEach((nodeId, nodeIndex) => {
+                        let x;
+                        if (sources.includes(nodeId)) {
+                            x = -1 + spacing * (nodeIndex + 1);
+                        } else if (sinks.includes(nodeId)) {
+                            x = 1 - spacing * (layer.length - nodeIndex);
+                        } else {
+                            x = -1 + spacing * (nodeIndex + 1);
+                        }
+                        
+                        const y = 1 - layerIndex * layerHeight;
+                        nodePositions[nodeId] = { x, y };
+                    });
+                });
+                
                 s.graph.nodes().forEach(node => {
-                    if (positions[node.id]) {
-                        node.x = positions[node.id].x;
-                        node.y = positions[node.id].y;
-                    } else {
-                        node.x = Math.random() * 2 - 1;
-                        node.y = Math.random() * 2 - 1;
+                    if (nodePositions[node.id]) {
+                        node.x = nodePositions[node.id].x;
+                        node.y = nodePositions[node.id].y;
                     }
                 });
+                
+                s.refresh();
             }
             
-            function applyCircularLayout(graphData) {
-                const nodes = graphData.nodes;
-                const radius = Math.min(1, Math.sqrt(nodes.length) * 0.5);
-                const angleStep = (2 * Math.PI) / nodes.length;
-            
-                nodes.forEach((node, index) => {
-                    const angle = index * angleStep;
-                    node.x = radius * Math.cos(angle);
-                    node.y = radius * Math.sin(angle);
-                });
-            }
-            
-            document.getElementById('reset-layout').addEventListener('click', function() {
-                if (s) {
-                    resetLayout();
+            function optimizeLayerOrder(layers, adjList) {
+                let bestLayers = JSON.parse(JSON.stringify(layers));
+                let minCrossings = countCrossings(bestLayers, adjList);
+                
+                const MAX_ITERATIONS = 100;
+                for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+                    const newLayers = JSON.parse(JSON.stringify(layers));
+                    
+                    for (let i = 0; i < newLayers.length; i++) {
+                        newLayers[i] = [...newLayers[i]].sort(() => Math.random() - 0.5);
+                    }
+                    
+                    const crossings = countCrossings(newLayers, adjList);
+                    if (crossings < minCrossings) {
+                        minCrossings = crossings;
+                        bestLayers = newLayers;
+                    }
                 }
-            });
-            
+                
+                return bestLayers;
+            }
+
             function convertFunctionsToGraph(functions) {
                 console.log("Получены функции:", functions);
                 
                 return JSON.parse(buildCS(functions))
+            }
+
+            function countCrossings(layers, adjList) {
+                let crossings = 0;
+                for (let i = 0; i < layers.length - 1; i++) {
+                    const currentLayer = layers[i];
+                    const nextLayer = layers[i + 1];
+                    
+                    for (let j = 0; j < currentLayer.length; j++) {
+                        for (let k = j + 1; k < currentLayer.length; k++) {
+                            const u1 = currentLayer[j];
+                            const u2 = currentLayer[k];
+                            const edges1 = adjList[u1] || [];
+                            const edges2 = adjList[u2] || [];
+                            
+                            const positions1 = edges1.map(v => nextLayer.indexOf(v)).filter(p => p !== -1).sort((a,b) => a-b);
+                            const positions2 = edges2.map(v => nextLayer.indexOf(v)).filter(p => p !== -1).sort((a,b) => a-b);
+                            
+                            let x = 0, y = 0;
+                            while (x < positions1.length && y < positions2.length) {
+                                if (positions1[x] < positions2[y]) {
+                                    x++;
+                                } else if (positions1[x] > positions2[y]) {
+                                    crossings += positions1.length - x;
+                                    y++;
+                                } else {
+                                    x++; y++;
+                                }
+                            }
+                        }
+                    }
+                }
+                return crossings;
             }
         });
     </script>
