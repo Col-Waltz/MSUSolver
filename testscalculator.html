@@ -3,123 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Построение КС логических функций</title>
+    <title>Построение тестов для КС</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
         }
-        .function-container {
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        .input-field {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-        .button-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 5px;
-        }
-        .symbol-button {
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            background-color: #f0f0f0;
+        #graph-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
         }
-        .symbol-button:hover {
-            background-color: #e0e0e0;
-        }
-        .add-button {
-            padding: 10px 15px;
+        .node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             background-color: #4CAF50;
             color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .add-button:hover {
-            background-color: #45a049;
-        }
-        .remove-button {
-            padding: 5px 10px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .remove-button:hover {
-            background-color: #d32f2f;
-        }
-        .button-container {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            cursor: move;
+            user-select: none;
+            z-index: 2;
         }
-        .clear-button {
-            padding: 8px 12px;
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .clear-button:hover {
-            background-color: #e68a00;
-        }
-        .keyboard-container {
-            display: none;
-        }
-        .active-keyboard {
-            display: block;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .build-button {
-            padding: 10px 15px;
+        .begin-node {
             background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        }
+        .end-node {
+            background-color: #f44336;
+        }
+        .edge {
+            position: absolute;
+            z-index: 1;
+        }
+        .edge-label-container {
+            position: absolute;
+            z-index: 3;
+        }
+        .edge-label {
+            width: 30px;
+            font-size: 12px;
+            text-align: center;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 15px;
+            margin-right: 10px;
             cursor: pointer;
-            font-size: 16px;
         }
-        .build-button:hover {
-            background-color: #0b7dda;
+	.symbol-button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            cursor: pointer;
         }
-        .independent-container {
-            margin: 20px 0;
-            border: 1px solid #aaa;
-            padding: 15px;
-            border-radius: 5px;
+        .selected {
+            box-shadow: 0 0 0 3px #FFC107;
+        }
+        .edge-mode {
+            background-color: #ffeb3b;
+            color: #000;
+        }
+        .fault-mode {
+            background-color: #ff9800;
+            color: #000;
+        }
+        .edge-fault-selected {
+            border-top: 2px solid #f44336 !important;
+        }
+        #hint {
+            margin-top: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        #paths-output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
             background-color: #f9f9f9;
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .independent-title {
-            font-weight: bold;
-            margin-bottom: 10px;
+        #faults-output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            max-height: 200px;
+            overflow-y: auto;
         }
-	.functions-title {
+        .fault-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .fault-item span {
             font-weight: bold;
-            margin-bottom: 10px;
+        }
+        .path-section {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .path-section h4 {
+            margin-bottom: 5px;
         }
 	.result-container {
             margin-top: 20px;
@@ -130,16 +130,16 @@
             font-family: monospace;
             font-size: 16px;
         }
-        /* Стили для таблиц */
-        .tables-container {
+	.tables-container {
             display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
+	    align-items: flex-start;
+            gap: 10px;
+	    flex-wrap: wrap;
         }
         .truth-table {
             border-collapse: collapse;
             margin-top: 20px;
+	    vertical-align: top;
         }
         .truth-table th, .truth-table td {
             border: 1px solid #ddd;
@@ -152,76 +152,46 @@
         .table-title {
             font-weight: bold;
             margin-bottom: 10px;
+	    margin-top: 0;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div id="controls">
-            <h2>Проверочные и диагностические тесты</h2>
-            <h5>Этот калькулятор может построить тупиковые проверочные и диагностические тесты по введенной формуле и возможным неисправностям. Логическая формула вводится с использованием всех операций, так как разделение на переменные происходит по операциям. При описании неисправностей выберите характер неисправности и какие переменные неисправность затрагивает. Перечислите переменные через запятую. Будте внимательны некорректные переменные просто не обработаются, так как ребер с такими переменными в КС нет!!</h5>
-            
-            <div class="independent-container">
-                <div class="independent-title">Введите логическую функцию</div>
-                <input type="text" class="input-field" id="independent-input">
-                <button class="clear-button" id="independent-clear">Очистить</button>
-                <div class="keyboard-container" id="independent-keyboard">
-		    <div class="button-row">
-                        <button class="symbol-button" data-symbol="x1">x1</button>
-                        <button class="symbol-button" data-symbol="x2">x2</button>
-                        <button class="symbol-button" data-symbol="x3">x3</button>
-                        <button class="symbol-button" data-symbol="x4">x4</button>
-                        <button class="symbol-button" data-symbol="(">(</button>
-                        <button class="symbol-button" data-symbol=")">)</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="symbol-button" data-symbol="∧">∧</button>
-                        <button class="symbol-button" data-symbol="∨">∨</button>
-                        <button class="symbol-button" data-symbol="¬">¬</button>
-                        <button class="symbol-button" data-symbol="⊕">⊕</button>
-                        <button class="symbol-button" data-symbol="≡">≡</button>
-                        <button class="symbol-button" data-symbol="|">|</button>
-                        <button class="symbol-button" data-symbol="→">→</button>
-                        <button class="symbol-button" data-symbol="↓">↓</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="functions-container">
-		<div class="functions-title">Укажите возможные неисправности</div>
-                <div class="function-container" id="function-1">
-                    <select class="rule-type" style="margin-right: 10px; padding: 5px;">
-                        <option value="break">Обрыв</option>
-                        <option value="make">Замыкание</option>
-                    </select>
-                    <span style="margin-right: 10px;">контактов</span>
-                    <input type="text" class="input-field" id="input-1">
-                    <button class="clear-button">Очистить</button>
-                    <div class="keyboard-container active-keyboard" id="keyboard-1">
-                        <div class="button-row">
-                            <button class="symbol-button" data-symbol="x1">x1</button>
-                            <button class="symbol-button" data-symbol="x2">x2</button>
-                            <button class="symbol-button" data-symbol="x3">x3</button>
-                            <button class="symbol-button" data-symbol="x4">x4</button>
-                            <button class="symbol-button" data-symbol="¬">¬</button>
-                            <button class="symbol-button" data-symbol=",">,</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button id="add-function" class="add-button">Добавить неисправность</button>
-                <button id="build-knf" class="build-button">Построить проверочный тест</button>
-                <button id="reset-layout" class="build-button">Построить диагностический тест</button>
-            </div>
-            <div id="tables-container" class="tables-container"></div>
-	    <div id="result-container" class="result-container"></div>
-        </div>
+    <h1>Проверочные и диагностические тесты</h1>
+    <h5>Этот калькулятор может построить тупиковые проверочные и диагностические тесты по введенной схеме и возможным неисправностям. Постройте схему из вершин и ребер. Каждому ребру присвойте имя переменной с отрицанием или без. Далее опишите возможные неисправности выбирая ребра на на графе и указывая для них тип неисправности, по нажатию `создать неисправность` завершится создание одной неисправности. После задания схемы и неисправностей постройте необходимые вам тесты.</h5>
+    <div class="controls">
+        <button id="create-node">Создать узел</button>
+        <button id="create-edge">Создать контакт</button>
+        <button id="delete-selected">Удалить выбранный элемент</button>
     </div>
-
+    <div id="elem-butns" class="controls">
+	<button class="symbol-button" data-symbol="x1">x1</button>
+        <button class="symbol-button" data-symbol="x2">x2</button>
+        <button class="symbol-button" data-symbol="x3">x3</button>
+        <button class="symbol-button" data-symbol="x4">x4</button>
+        <button class="symbol-button" data-symbol="¬">¬</button>
+    </div>
+    <div id="graph-container"></div>
+    <div class="controls">
+        <button id="new-fault">Создать неисправность</button>
+        <button id="create-close" disabled>Обрыв выбранных контактов</button>
+        <button id="create-open" disabled>Замыкание выбранных контактов</button>
+	<button id="create-fault" disabled>Подтвердить неисправность</button>
+        <div id="hint"></div>
+    </div>
+    <div id="faults-output">
+        <h3>Список неисправностей</h3>
+        <div id="faults-list"></div>
+    </div>
+    <div class="controls">
+	<button id="calculate-check">Вычислить проверочный тест</button>
+        <button id="calculate-proof">Вычислить диагностический тест</button>
+    </div>
+    <div id="tables-container" class="tables-container"></div>
+    <div id="result-container" class="result-container"></div>
+    
     <script>
-	const logicalOps = ["∧", "∨", "⊕", "↓", "|", "→", "≡", "(", ")", "¬"];
+        const logicalOps = ["∧", "∨", "⊕", "↓", "|", "→", "≡", "(", ")", "¬"];
         
         class Expr {
             static Var(varname) { return { type: "Var", varname }; }
@@ -376,7 +346,7 @@
                 case "Impl":
                 case "Eq":
                     return [...getExpr(expr.left), ...getExpr(expr.right)];
-                case "Not": return getExpr(expr.expr);y1*y2*y3*y5 + y1*y2*y4*y5 + y1*y3*y4*y5
+                case "Not": return getExpr(expr.expr);
                 case "Bool": return [];
                 default: throw new Error("Unknown expression type");
             }
@@ -443,24 +413,488 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            let functionCount = 1;
-            let activeInputId = 'input-1';
-            let s = null;
-            let forceAtlas2 = null;
-	
-            function prepareFuncs(funcString, faults) {
-                return faults.map(([replaceWithOne, substrings]) => {
-                    let result = funcString;
-                    substrings.forEach(substring => {
-			const regex = new RegExp(`(?<!¬)${substring}(?!\\d)`, 'g');
-                        const replacement = replaceWithOne ? '1' : '0';
-                        result = result.replace(regex, replacement);
-                    });
-                    return result;
+            const graphContainer = document.getElementById('graph-container');
+            const createNodeBtn = document.getElementById('create-node');
+            const createEdgeBtn = document.getElementById('create-edge');
+            const deleteSelectedBtn = document.getElementById('delete-selected');
+            const calculateCheckBtn = document.getElementById('calculate-check');
+            const calculateProofBtn = document.getElementById('calculate-proof');
+            const newFaultBtn = document.getElementById('new-fault');
+            const createCloseBtn = document.getElementById('create-close');
+            const createOpenBtn = document.getElementById('create-open');
+	    const confirmFaultBtn = document.getElementById('create-fault');
+            const hintElement = document.getElementById('hint');
+            const pathsOutput = document.getElementById('paths-output');
+            const faultsList = document.getElementById('faults-list');
+	    const elementButtons = document.getElementById('elem-butns');
+            
+            let nodes = [];
+            let edges = [];
+            let faults = [];
+	    let openfaults = [];
+	    let closefaults = [];
+            let selectedElement = null;
+            let isCreatingEdge = false;
+            let isCreatingFault = false;
+            let edgeStartNode = null;
+            let nodeCounter = 1;
+            let selectedEdgesForFault = [];
+            
+            const beginNode = createNode(100, 250, 'begin');
+            beginNode.classList.add('begin-node');
+            
+            const endNode = createNode(700, 250, 'end');
+            endNode.classList.add('end-node');
+            
+            createNodeBtn.addEventListener('click', function() {
+                createNode(
+                    Math.random() * (graphContainer.offsetWidth - 100) + 50,
+                    Math.random() * (graphContainer.offsetHeight - 100) + 50
+                );
+            });
+
+	    elementButtons.addEventListener('click', function(e) {
+                if (e.target.classList.contains('symbol-button')) {
+                    const symbol = e.target.getAttribute('data-symbol');
+                    insertSymbol(symbol);
+                }
+            });
+            
+            createEdgeBtn.addEventListener('click', function() {
+                if (!isCreatingEdge && !isCreatingFault) {
+                    isCreatingEdge = true;
+                    edgeStartNode = null;
+                    createEdgeBtn.classList.add('edge-mode');
+                    createEdgeBtn.textContent = 'Отменить создание';
+                    hintElement.textContent = 'Выберите первую точку контакта';
+                } else {
+                    cancelEdgeCreation();
+                }
+            });
+            
+            deleteSelectedBtn.addEventListener('click', function() {
+                if (selectedElement) {
+                    if (selectedElement.classList.contains('node')) {
+                        deleteNode(selectedElement);
+                    } else if (selectedElement.classList.contains('edge') || 
+                               selectedElement.classList.contains('edge-label-container')) {
+                        deleteEdge(selectedElement);
+                    }
+                    selectedElement = null;
+                }
+            });
+            
+            calculateCheckBtn.addEventListener('click', function() {
+                calculateCheck();
+            });
+            
+            calculateProofBtn.addEventListener('click', function() {
+                calculateProof();
+            });
+
+            newFaultBtn.addEventListener('click', function() {
+                if (!isCreatingFault && !isCreatingEdge) {
+                    startCreatingFault();
+                } else {
+                    cancelCreatingFault();
+                }
+            });
+            
+            createCloseBtn.addEventListener('click', function() {
+                if (selectedEdgesForFault.length > 0) {
+		    closefaults = [...closefaults, ...selectedEdgesForFault];
+		    selectedEdgesForFault.forEach(edge => {
+			edge.element.classList.remove('edge-fault-selected');
+		    });
+                    selectedEdgesForFault = [];
+		    hintElement.textContent = `На данный момент выбраны разрывы: ${closefaults.map(edge => edge.label.value || 'unnamed').join(',')}, замыкания: ${openfaults.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите остальные неисправности или завершите ввод неисправности.`;
+		    confirmFaultBtn.disabled = false;
+                }
+            });
+
+	    confirmFaultBtn.addEventListener('click', function() {
+		if (selectedEdgesForFault.length > 0) {
+		    hintElement.textContent = 'Имеются выбранные контакты, укажите тип неисправности для них или отмените выбор перед тем как создать неисправность';
+		    confirmFaultBtn.disabled = true;
+		    return;
+		}
+		createFault(openfaults, closefaults);
+		cancelCreatingFault();
+		openfaults = [];
+		closefaults = [];
+	    });
+            
+            createOpenBtn.addEventListener('click', function() {
+                if (selectedEdgesForFault.length > 0) {
+		    openfaults = [...openfaults, ...selectedEdgesForFault];
+		    selectedEdgesForFault.forEach(edge => {
+			edge.element.classList.remove('edge-fault-selected');
+		    });
+		    selectedEdgesForFault = [];
+		    hintElement.textContent = `На данный момент выбраны разрывы: ${closefaults.map(edge => edge.label.value || 'unnamed').join(',')}, замыкания: ${openfaults.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите остальные неисправности или завершите ввод неисправности.`;
+		    confirmFaultBtn.disabled = false;
+                }
+            });
+            
+            function cancelEdgeCreation() {
+                isCreatingEdge = false;
+                edgeStartNode = null;
+                createEdgeBtn.classList.remove('edge-mode');
+                createEdgeBtn.textContent = 'Создать контакт';
+		hintElement.textContent = '';
+            }
+            
+            function startCreatingFault() {
+                isCreatingFault = true;
+                newFaultBtn.classList.add('fault-mode');
+                createCloseBtn.disabled = false;
+                createOpenBtn.disabled = false;
+                hintElement.textContent = 'Выберите контакты, которые будут неисправны и после выберите тип неисправности.';
+                
+                selectedEdgesForFault.forEach(edge => {
+                    edge.element.classList.remove('edge-fault-selected');
+                });
+                selectedEdgesForFault = [];
+            }
+            
+            function cancelCreatingFault() {
+                isCreatingFault = false;
+                newFaultBtn.classList.remove('fault-mode');
+                createCloseBtn.disabled = true;
+                createOpenBtn.disabled = true;
+		confirmFaultBtn.disabled = true;
+		hintElement.textContent = '';
+                
+                selectedEdgesForFault.forEach(edge => {
+                    edge.element.classList.remove('edge-fault-selected');
+                });
+                selectedEdgesForFault = [];
+		openfaults = [];
+		closefaults = [];
+            }
+            
+            function toggleEdgeForFault(edge) {
+                const index = selectedEdgesForFault.findIndex(e => e === edge);
+                
+                if (index === -1) {
+                    selectedEdgesForFault.push(edge);
+                    edge.element.classList.add('edge-fault-selected');
+                } else {
+                    selectedEdgesForFault.splice(index, 1);
+                    edge.element.classList.remove('edge-fault-selected');
+                }
+                
+                if (selectedEdgesForFault.length > 0) {
+			hintElement.textContent = `Выбраны контакты: ${selectedEdgesForFault.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите тип неисправности.`;
+                } else {
+                    hintElement.textContent = 'Выберите хотя бы один контакт.';
+                }
+            }
+            
+            function createNode(x, y, name = '') {
+                const node = document.createElement('div');
+                node.className = 'node';
+                node.dataset.id = nodeCounter++;
+                if (name) node.dataset.name = name;
+                
+                node.style.left = x + 'px';
+                node.style.top = y + 'px';
+                
+                node.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectElement(node);
+                    
+                    if (isCreatingEdge) {
+                        if (!edgeStartNode) {
+                            edgeStartNode = node;
+                            hintElement.textContent = 'Выберите вторую точку контакта';
+                        } else if (edgeStartNode !== node) {
+                            createEdge(edgeStartNode, node);
+                            cancelEdgeCreation();
+                        }
+                    }
+                });
+                
+                let isDragging = false;
+                let offsetX, offsetY;
+                
+                node.addEventListener('mousedown', function(e) {
+                    if (e.button !== 0) return;
+                    isDragging = true;
+                    offsetX = e.clientX - node.getBoundingClientRect().left;
+                    offsetY = e.clientY - node.getBoundingClientRect().top;
+                    selectElement(node);
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    
+                    const containerRect = graphContainer.getBoundingClientRect();
+                    let x = e.clientX - containerRect.left - offsetX;
+                    let y = e.clientY - containerRect.top - offsetY;
+                    
+                    x = Math.max(0, Math.min(containerRect.width - node.offsetWidth, x));
+                    y = Math.max(0, Math.min(containerRect.height - node.offsetHeight, y));
+                    
+                    node.style.left = x + 'px';
+                    node.style.top = y + 'px';
+                    updateConnectedEdges(node);
+                });
+                
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                });
+                
+                graphContainer.appendChild(node);
+                nodes.push(node);
+                return node;
+            }
+            
+            function createEdge(node1, node2) {
+                const edgeExists = edges.some(edge => 
+                    (edge.startNode === node1 && edge.endNode === node2) ||
+                    (edge.startNode === node2 && edge.endNode === node1)
+                );
+                
+                if (edgeExists) {
+                    alert('Edge already exists between these nodes!');
+                    return;
+                }
+                
+                const edge = document.createElement('div');
+                edge.className = 'edge';
+                
+                const edgeLabelContainer = document.createElement('div');
+                edgeLabelContainer.className = 'edge-label-container';
+                
+                const edgeLabel = document.createElement('input');
+                edgeLabel.className = 'edge-label';
+                edgeLabel.type = 'text';
+                edgeLabel.maxLength = 3;
+                edgeLabel.value = '';
+                edgeLabel.placeholder = '...';
+                
+                edgeLabelContainer.appendChild(edgeLabel);
+                
+                edge.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    if (isCreatingFault) {
+                        const edgeObj = edges.find(ed => 
+                            ed.element === edge || ed.labelContainer === edge
+                        );
+                        if (edgeObj) {
+                            toggleEdgeForFault(edgeObj);
+                        }
+                    } else {
+                        selectElement(edge);
+                    }
+                });
+                
+                edgeLabelContainer.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    if (isCreatingFault) {
+                        const edgeObj = edges.find(ed => 
+                            ed.element === edge || ed.labelContainer === edge
+                        );
+                        if (edgeObj) {
+                            toggleEdgeForFault(edgeObj);
+                        }
+                    } else {
+                        selectElement(edge);
+                    }
+                });
+                
+                graphContainer.appendChild(edge);
+                graphContainer.appendChild(edgeLabelContainer);
+                
+                const edgeObj = {
+                    element: edge,
+                    labelContainer: edgeLabelContainer,
+                    label: edgeLabel,
+                    startNode: node1,
+                    endNode: node2
+                };
+                
+                edges.push(edgeObj);
+                updateEdge(edgeObj);
+                return edgeObj;
+            }
+            
+            function updateEdge(edge) {
+                const startRect = edge.startNode.getBoundingClientRect();
+                const endRect = edge.endNode.getBoundingClientRect();
+                const containerRect = graphContainer.getBoundingClientRect();
+                
+                const startX = startRect.left - containerRect.left + startRect.width / 2;
+                const startY = startRect.top - containerRect.top + startRect.height / 2;
+                const endX = endRect.left - containerRect.left + endRect.width / 2;
+                const endY = endRect.top - containerRect.top + endRect.height / 2;
+                
+                const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                
+                edge.element.style.width = length + 'px';
+                edge.element.style.left = startX + 'px';
+                edge.element.style.top = startY + 'px';
+                edge.element.style.transformOrigin = '0 0';
+                edge.element.style.transform = 'rotate(' + angle + 'deg)';
+                edge.element.style.borderTop = '2px solid #333';
+                
+                const labelX = (startX + endX) / 2 - 15;
+                const labelY = (startY + endY) / 2 - 10;
+                edge.labelContainer.style.left = labelX + 'px';
+                edge.labelContainer.style.top = labelY + 'px';
+            }
+            
+            function updateConnectedEdges(node) {
+                edges.forEach(edge => {
+                    if (edge.startNode === node || edge.endNode === node) {
+                        updateEdge(edge);
+                    }
                 });
             }
-
-            function createTruthTable(funcString, preparedFuncs, title) {
+            
+            function deleteNode(node) {
+                edges = edges.filter(edge => {
+                    if (edge.startNode === node || edge.endNode === node) {
+                        graphContainer.removeChild(edge.element);
+                        graphContainer.removeChild(edge.labelContainer);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                graphContainer.removeChild(node);
+                nodes = nodes.filter(n => n !== node);
+            }
+            
+            function deleteEdge(edgeElement) {
+                let edgeToDelete = null;
+                
+                if (edgeElement.classList.contains('edge')) {
+                    edgeToDelete = edges.find(e => e.element === edgeElement);
+                } else if (edgeElement.classList.contains('edge-label-container')) {
+                    edgeToDelete = edges.find(e => e.labelContainer === edgeElement);
+                }
+                
+                if (edgeToDelete) {
+                    graphContainer.removeChild(edgeToDelete.element);
+                    graphContainer.removeChild(edgeToDelete.labelContainer);
+                    edges = edges.filter(e => e !== edgeToDelete);
+                    
+                    faults.forEach(fault => {
+                        const openindex = fault.openfaults.findIndex(e => e === edgeToDelete);
+                        const closeindex = fault.closefaults.findIndex(e => e === edgeToDelete);
+			if (openindex !== -1) {
+                            fault.openfaults.splice(openindex, 1);
+                        }
+			if (closeindex !== -1) {
+			    fault.closefaults.splice(closeindex, 1);
+			}
+                    });
+		    faults = faults.filter(fault => fault.openfaults.length > 0 || fault.closefaults.length > 0);
+                    updateFaultsList();
+                }
+            }
+            
+            function selectElement(element) {
+                if (isCreatingFault) return;
+                
+                if (selectedElement) {
+                    selectedElement.classList.remove('selected');
+                }
+                
+                selectedElement = element;
+                selectedElement.classList.add('selected');
+            }
+            
+	    function createFault(openfaults, closefaults) {
+                const faultId = faults.length + 1;
+		faults.push({
+		    faultId: faultId,
+		    openfaults: openfaults || [],
+		    closefaults: closefaults || [],
+		});
+                updateFaultsList();
+            }
+            
+            function updateFaultsList() {
+                faultsList.innerHTML = '';
+                
+                if (faults.length === 0) {
+                    faultsList.innerHTML = '<p>Нет неисправностей</p>';
+                    return;
+                }
+                
+                faults.forEach(fault => {
+                    const faultElement = document.createElement('div');
+                    faultElement.className = 'fault-item';
+		    const opennames = fault.openfaults.map(edge => edge.label.value || 'unnamed');
+		    const closenames = fault.closefaults.map(edge => edge.label.value || 'unnamed');
+                    faultElement.innerHTML = `
+                        <span>${`Неисправность ${fault.faultId} Разрывы: [${closenames.join(', ')}], Замыкания: [${opennames.join(', ')}]`}</span>
+                        <button class="delete-fault" data-id="${fault.faultId}">Удалить</button>
+                    `;
+                    faultsList.appendChild(faultElement);
+                });
+                
+                document.querySelectorAll('.delete-fault').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const faultId = parseInt(this.getAttribute('data-id'));
+                        faults = faults.filter(f => f.faultId !== faultId);
+                        updateFaultsList();
+                    });
+                });
+            }
+            
+            function findAllPaths(startNode, endNode, openfaults, closefaults) {
+                const paths = [];
+                const visitedNodes = new Set();
+                const currentPath = [];
+                
+                function dfs(node) {
+                    if (node === endNode) {
+                        paths.push([...currentPath]);
+                        return;
+                    }
+                    
+                    visitedNodes.add(node);
+                    
+                    const connectedEdges = edges.filter(edge => 
+                        edge.startNode === node || edge.endNode === node
+                    );
+                    
+                    for (const edge of connectedEdges) {
+                        const neighbor = edge.startNode === node ? edge.endNode : edge.startNode;
+                        if (!visitedNodes.has(neighbor)) {
+                            let label = edge.label.value || 'unnamed';
+                            
+                            if (openfaults && openfaults.includes(edge)) {
+                                label = '1';
+                            }
+			    if (closefaults && closefaults.includes(edge)) {
+				label = '0';
+			    }
+                            
+                            currentPath.push(label);
+                            
+                            dfs(neighbor);
+                            
+                            currentPath.pop();
+                        }
+                    }
+                    
+                    visitedNodes.delete(node);
+                }
+                
+                dfs(startNode);
+                return paths;
+            }
+	
+	    function createTruthTable(funcString, preparedFuncs, title) {
                 if (!funcString || !preparedFuncs) return null;
                 
                 try {
@@ -536,8 +970,8 @@
                     return null;
                 }
             }
-            
-            function createXorTable(funcResults, preparedFuncsResults, points, title) {
+	
+	    function createXorTable(funcResults, preparedFuncsResults, points, title) {
                 const xorData = [];
                 const pointMap = {};
                 
@@ -555,9 +989,9 @@
                 const uniqueXor = [...new Set(xorData)];
             
                 const xorTable = document.createElement('table');
-                xorTable.className = 'xor-table';
+                xorTable.className = 'truth-table';
                 xorTable.style.borderCollapse = 'collapse';
-                xorTable.style.margin = '20px 0';
+                xorTable.style.margin = '20px';
                 xorTable.style.fontFamily = 'Arial, sans-serif';
             
                 const thead = document.createElement('thead');
@@ -605,8 +1039,16 @@
                     
                     tbody.appendChild(row);
                 });
-                
+
                 xorTable.appendChild(tbody);
+
+		const tableContainer = document.createElement('div');
+                const titleElement = document.createElement('div');
+                titleElement.className = 'table-title';
+                titleElement.textContent = title;
+                    
+                tableContainer.appendChild(titleElement);
+                tableContainer.appendChild(xorTable);
             
 		return {
                     table: xorTable,
@@ -618,28 +1060,12 @@
                                 points: pointMap[xorStr]
                             }
                         ])
-                    )
+                    ),
+		    printable: tableContainer
                 };
             }
 
-            function collectFaults() {
-                const faults = [];
-                document.querySelectorAll('.function-container').forEach((container, index) => {
-                    const input = container.querySelector('.input-field');
-                    const ruleType = container.querySelector('.rule-type').value;
-                    const faultType = ruleType === 'break' ? false : true;
-                    const faultString = input.value.split(',').map(s => s.trim());
-                    
-                    if (input.value.trim() !== '') {
-                        faults.push([faultType, faultString]);
-                    }
-                });
-                
-                console.log('Результаты неисправностей:', faults);
-                return faults;
-            }
-
-            function createFullXorTable(funcResults, preparedFuncsResults, points, title) {
+	    function createFullXorTable(funcResults, preparedFuncsResults, points, title) {
                 const allFunctions = [funcResults, ...preparedFuncsResults];
                 const funcNames = ['f', ...preparedFuncsResults.map((_, i) => `f${i+1}`)];
             
@@ -723,6 +1149,14 @@
                 });
                 
                 xorTable.appendChild(tbody);
+
+		const tableContainer = document.createElement('div');
+                const titleElement = document.createElement('div');
+                titleElement.className = 'table-title';
+                titleElement.textContent = title;
+                    
+                tableContainer.appendChild(titleElement);
+                tableContainer.appendChild(xorTable);
             
                 return {
                     table: xorTable,
@@ -738,11 +1172,12 @@
                                 }))
                             }
                         ])
-                    )
+                    ),
+		    printable: tableContainer
                 };
             }
-
-            function buildCNF(xorTableResult) {
+	
+	    function buildCNF(xorTableResult) {
                 const { correspondence } = xorTableResult;
                 const cnfParts = [];
                 
@@ -778,7 +1213,7 @@
                 
                 const cnfElement = document.createElement('div');
                 cnfElement.className = 'cnf-formula';
-                cnfElement.textContent = fullCNF || '1'; // Если нет условий, КНФ = 1
+                cnfElement.textContent = fullCNF || '1';
                 cnfContainer.appendChild(cnfElement);
                 
                 const explanation = document.createElement('div');
@@ -851,20 +1286,30 @@
                     .map(term => term.sort().join('*'))
                     .join(' + ');
             }
-            
-            document.getElementById('build-knf').addEventListener('click', function() {
-                const funcString = document.getElementById('independent-input').value.trim();
-                const tablesContainer = document.getElementById('tables-container');
+
+            function calculateCheck() {
+		const tablesContainer = document.getElementById('tables-container');
                 tablesContainer.innerHTML = '';
                 
-                const faults = collectFaults();
-		const preparedFuncs = prepareFuncs(funcString, faults); 
-                
-                const [func, preparedfuncs, points, testTable] = createTruthTable(funcString, preparedFuncs, 'Проверочный тест');
+                const normalPaths = findAllPaths(beginNode, endNode);
+		const goodFunc = generateFunction(normalPaths);
+                const faultFuncs = [];
+
+                faults.forEach(fault => {
+                    const faultPaths = findAllPaths(
+                        beginNode, 
+                        endNode, 
+			fault.openfaults, 
+			fault.closefaults
+                    );
+		    faultFuncs.push(generateFunction(faultPaths));
+                });
+		console.log('Funcs after:', goodFunc, faultFuncs);
+		const [func, preparedfuncs, points, testTable] = createTruthTable(goodFunc, faultFuncs, 'Проверочный тест');
                 if (testTable) {
                     tablesContainer.appendChild(testTable);
 		    const result = createXorTable(func, preparedfuncs, points, 'Матрица различий');
-                    tablesContainer.appendChild(result.table);
+                    tablesContainer.appendChild(result.printable);
 		    const unoptimizedCNF = buildCNF(result);
 		    console.log(unoptimizedCNF);
 		    const res = expandCNF(unoptimizedCNF.cnf);
@@ -872,47 +1317,42 @@
 		    showResult(unoptimizedCNF.cnf + ' => *магия* => ' + res);
                 } else {
                     alert('Невозможно построить таблицу для введенной функции');
-                }
-            });
-            
-            document.getElementById('reset-layout').addEventListener('click', function() {
-                const funcString = document.getElementById('independent-input').value.trim();
-                const tablesContainer = document.getElementById('tables-container');
-                tablesContainer.innerHTML = '';
-                
-                const faults = collectFaults();
-		const preparedFuncs = prepareFuncs(funcString, faults); 
-                
-                const [func, preparedfuncs, points, diagnosticTable] = createTruthTable(funcString, preparedFuncs, 'Диагностический тест');
-                if (diagnosticTable) {
-                    tablesContainer.appendChild(diagnosticTable);
-		    const result = createFullXorTable(func, preparedfuncs, points, 'Матрица различий');
-                    tablesContainer.appendChild(result.table);
-		    const unoptimizedCNF = buildCNF(result);
-		    console.log(unoptimizedCNF);
-		    const res = expandCNF(unoptimizedCNF.cnf);
-		    console.log(res);
-		    showResult(unoptimizedCNF.cnf + ' => *магия* => ' + res);
-                } else {
-                    alert('Невозможно построить таблицу для введенной функции');
-                }
-            });
-            
-            function setActiveInput(inputId) {
-                activeInputId = inputId;
-                document.querySelectorAll('.keyboard-container').forEach(kb => {
-                    kb.classList.remove('active-keyboard');
-                });
-                
-                if (inputId.startsWith('input-')) {
-                    const functionContainer = document.getElementById(inputId).closest('.function-container');
-                    const keyboard = functionContainer.querySelector('.keyboard-container');
-                    if (keyboard) keyboard.classList.add('active-keyboard');
-                } else if (inputId === 'independent-input') {
-                    document.getElementById('independent-keyboard').classList.add('active-keyboard');
                 }
             }
 
+	    function calculateProof() {
+		const tablesContainer = document.getElementById('tables-container');
+                tablesContainer.innerHTML = '';
+                
+                const normalPaths = findAllPaths(beginNode, endNode);
+		const goodFunc = generateFunction(normalPaths);
+                const faultFuncs = [];
+
+                faults.forEach(fault => {
+                    const faultPaths = findAllPaths(
+                        beginNode, 
+                        endNode, 
+                        fault.openfaults, 
+                        fault.closefaults
+                    );
+		    faultFuncs.push(generateFunction(faultPaths));
+                });
+		console.log('Funcs after:', goodFunc, faultFuncs);
+		const [func, preparedfuncs, points, testTable] = createTruthTable(goodFunc, faultFuncs, 'Диагностический  тест');
+                if (testTable) {
+                    tablesContainer.appendChild(testTable);
+		    const result = createFullXorTable(func, preparedfuncs, points, 'Матрица различий');
+                    tablesContainer.appendChild(result.printable);
+		    const unoptimizedCNF = buildCNF(result);
+		    console.log(unoptimizedCNF);
+		    const res = expandCNF(unoptimizedCNF.cnf);
+		    console.log(res);
+		    showResult(unoptimizedCNF.cnf + ' => *магия* => ' + res);
+                } else {
+                    alert('Невозможно построить таблицу для введенной функции');
+                }
+            }
+	
 	    function showResult(resultText) {
 		const resultContainer = document.getElementById('result-container');
 		resultContainer.innerHTML = '';
@@ -920,97 +1360,49 @@
 		resultElement.textContent = resultText
 		resultContainer.appendChild(resultElement);
 	    }
-            
-            function insertSymbol(symbol) {
-                const activeInput = document.getElementById(activeInputId);
-                if (activeInput) {
-                    const startPos = activeInput.selectionStart;
-                    const endPos = activeInput.selectionEnd;
-                    const currentValue = activeInput.value;
-                    
-                    activeInput.value = currentValue.substring(0, startPos) + symbol + currentValue.substring(endPos);
-                    
-                    setTimeout(() => {
-                        activeInput.selectionStart = activeInput.selectionEnd = startPos + symbol.length;
-                        activeInput.focus();
-                    }, 0);
-                }
+
+            function generateFunction(arr) {
+		const conjuctions = arr.map(subarr => subarr.join("∧"));
+		return conjuctions.join("∨");
             }
+	    
+	    function insertSymbol(symbol) {
+                if (selectedElement && (selectedElement.classList.contains('edge') || selectedElement.classList.contains('edge-label-container'))) {
+                    let edgeLabel;
+        
+                    if (selectedElement.classList.contains('edge')) {
+                        const edgeObj = edges.find(e => e.element === selectedElement);
+                        edgeLabel = edgeObj?.label;
+                    } else {
+                        const edgeObj = edges.find(e => e.labelContainer === selectedElement);
+                        edgeLabel = edgeObj?.label;
+                    }
+        
+                    if (edgeLabel) {
+                        const startPos = edgeLabel.selectionStart;
+                        const endPos = edgeLabel.selectionEnd;
+                        const currentValue = edgeLabel.value;
             
-            document.getElementById('independent-input').addEventListener('focus', function() {
-                setActiveInput('independent-input');
-            });
+                        edgeLabel.value = currentValue.substring(0, startPos) + symbol + currentValue.substring(endPos);
             
-            document.getElementById('independent-clear').addEventListener('click', function() {
-                document.getElementById('independent-input').value = '';
-                document.getElementById('independent-input').focus();
-            });
-            
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('symbol-button')) {
-                    const symbol = e.target.getAttribute('data-symbol');
-                    insertSymbol(symbol);
-                }
-                
-                if (e.target.classList.contains('clear-button') && e.target.id !== 'independent-clear') {
-                    const functionContainer = e.target.closest('.function-container');
-                    const inputField = functionContainer.querySelector('.input-field');
-                    inputField.value = '';
-                    inputField.focus();
-                    setActiveInput(inputField.id);
-                }
-            });
-            
-            document.addEventListener('focusin', function(e) {
-                if (e.target.classList.contains('input-field')) {
-                    setActiveInput(e.target.id);
-                }
-            });
-            
-            document.getElementById('add-function').addEventListener('click', function() {
-                functionCount++;
-                const newFunction = document.createElement('div');
-                newFunction.className = 'function-container';
-                newFunction.id = `function-${functionCount}`;
-                
-                newFunction.innerHTML = `
-                    <select class="rule-type" style="margin-right: 10px; padding: 5px;">
-                        <option value="break">Обрыв</option>
-                        <option value="make">Замыкание</option>
-                    </select>
-                    <span style="margin-right: 10px;">контактов</span>
-                    <input type="text" class="input-field" id="input-${functionCount}">
-                    <button class="clear-button">Очистить</button>
-                    <div class="keyboard-container" id="keyboard-${functionCount}">
-                        <div class="button-row">
-                            <button class="symbol-button" data-symbol="x1">x1</button>
-                            <button class="symbol-button" data-symbol="x2">x2</button>
-                            <button class="symbol-button" data-symbol="x3">x3</button>
-                            <button class="symbol-button" data-symbol="x4">x4</button>
-                            <button class="symbol-button" data-symbol="¬">¬</button>
-                            <button class="symbol-button" data-symbol=",">,</button>
-                        </div>
-                    </div>
-                    <button class="remove-button">Удалить неисправность</button>
-                `;
-                
-                document.getElementById('functions-container').appendChild(newFunction);
-                
-                const newInput = document.getElementById(`input-${functionCount}`);
-                newInput.focus();
-                setActiveInput(newInput.id);
-            });
-            
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-button')) {
-                    const functionContainer = e.target.closest('.function-container');
-                    if (functionContainer && functionContainer.id !== 'function-1') {
-                        functionContainer.remove();
+                        setTimeout(() => {
+                            edgeLabel.selectionStart = edgeLabel.selectionEnd = startPos + symbol.length;
+                            edgeLabel.focus();
+                        }, 0);
                     }
                 }
+            }
+
+            graphContainer.addEventListener('click', function() {
+                if (selectedElement && !isCreatingFault) {
+                    selectedElement.classList.remove('selected');
+                    selectedElement = null;
+                }
+                
+                if (isCreatingEdge) {
+                    cancelEdgeCreation();
+                }
             });
-            
-            setActiveInput('input-1');
         });
     </script>
 </body>
