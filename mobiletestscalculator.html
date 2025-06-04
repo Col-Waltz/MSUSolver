@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Построение тестов для КС</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            touch-action: manipulation;
+            -webkit-text-size-adjust: none;
+        }
+        #graph-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            z-index: 2;
+            font-size: 14px;
+            touch-action: none;
+        }
+        .begin-node {
+            background-color: #2196F3;
+        }
+        .end-node {
+            background-color: #f44336;
+        }
+        .edge {
+            position: absolute;
+            z-index: 1;
+            touch-action: none;
+        }
+	.edge::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            background: transparent;
+        }
+        .edge-label-container {
+            position: absolute;
+            z-index: 3;
+            touch-action: none;
+        }
+        .edge-label {
+            width: 30px;
+            font-size: 12px;
+            text-align: center;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px;
+            touch-action: manipulation;
+        }
+        .controls {
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+            min-width: 60px;
+            touch-action: manipulation;
+        }
+        .symbol-button {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 40px;
+        }
+        .selected {
+            box-shadow: 0 0 0 3px #FFC107;
+        }
+        .edge-mode {
+            background-color: #ffeb3b;
+            color: #000;
+        }
+        .fault-mode {
+            background-color: #ff9800;
+            color: #000;
+        }
+        .edge-fault-selected {
+            border-top: 2px solid #f44336 !important;
+        }
+        #hint {
+            margin-top: 10px;
+            color: #666;
+            font-style: italic;
+            font-size: 14px;
+        }
+        #faults-output {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+        .fault-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .fault-item span {
+            font-weight: bold;
+        }
+        .result-container {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .tables-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        .truth-table {
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+            width: 100%;
+            overflow-x: auto;
+            display: block;
+        }
+        .truth-table th, .truth-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        .truth-table th {
+            background-color: #f2f2f2;
+        }
+        .table-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            margin-top: 0;
+            font-size: 14px;
+        }
+        .controls-section {
+            margin-bottom: 10px;
+        }
+        .controls-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        @media (max-width: 480px) {
+            .node {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+            button {
+                padding: 6px 8px;
+                font-size: 12px;
+                min-width: 50px;
+            }
+            .symbol-button {
+                padding: 6px 8px;
+                font-size: 12px;
+                min-width: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Проверочные и диагностические тесты</h2>
+    <p style="font-size: 14px;">Этот калькулятор может построить тупиковые проверочные и диагностические тесты по введенной схеме и возможным неисправностям. Постройте схему из вершин и ребер. Каждому ребру присвойте имя переменной с отрицанием или без. Далее опишите возможные неисправности выбирая ребра на на графе и указывая для них тип неисправности, по нажатию `подтвердить неисправность` завершится создание одной неисправности. После задания схемы и неисправностей постройте необходимые вам тесты.</p>
+    
+    <div class="controls-section">
+        <div class="controls">
+            <button id="create-node">Создать узел</button>
+            <button id="create-edge">Создать контакт</button>
+            <button id="delete-selected">Удалить выбранный элемент</button>
+        </div>
+    </div>
+    
+    <div class="controls-section">
+        <div class="controls" id="elem-butns">
+            <button class="symbol-button" data-symbol="x1">x1</button>
+            <button class="symbol-button" data-symbol="x2">x2</button>
+            <button class="symbol-button" data-symbol="x3">x3</button>
+            <button class="symbol-button" data-symbol="x4">x4</button>
+            <button class="symbol-button" data-symbol="¬">¬</button>
+        </div>
+    </div>
+    
+    <div id="graph-container"></div>
+    
+    <div class="controls-section">
+        <div class="controls">
+            <button id="new-fault">Создать неисправность</button>
+            <button id="create-close" disabled>Обрыв</button>
+            <button id="create-open" disabled>Замыкание</button>
+            <button id="create-fault" disabled>Подтвердить</button>
+        </div>
+        <div id="hint"></div>
+    </div>
+    
+    <div id="faults-output">
+        <h3>Список неисправностей</h3>
+        <div id="faults-list"></div>
+    </div>
+    
+    <div class="controls-section">
+        <div class="controls">
+            <button id="calculate-check">Вычислить проверочный тест</button>
+            <button id="calculate-proof">Вычислить диагностический тест</button>
+        </div>
+    </div>
+    
+    <div id="tables-container" class="tables-container"></div>
+    <div id="result-container" class="result-container"></div>
+    
+    <script>
+        const logicalOps = ["∧", "∨", "⊕", "↓", "|", "→", "≡", "(", ")", "¬"];
+        
+        class Expr {
+            static Var(varname) { return { type: "Var", varname }; }
+            static Eq(left, right) { return { type: "Eq", left, right }; }
+            static Impl(left, right) { return { type: "Impl", left, right }; }
+            static Nor(left, right) { return { type: "Nor", left, right }; }
+            static Nand(left, right) { return { type: "Nand", left, right }; }
+            static Xor(left, right) { return { type: "Xor", left, right }; }
+            static And(left, right) { return { type: "And", left, right }; }
+            static Or(left, right) { return { type: "Or", left, right }; }
+            static Not(expr) { return { type: "Not", expr }; }
+            static Bool(value) { return { type: "Bool", value }; }
+        }
+        
+	function depleteFunc(s) {
+	    console.log("Depleted func: ", s);
+            return getToken(s, "", []);
+        }
+        
+        function getToken(s, current, result) {
+            if (s === "") {
+                return current === "" ? result.reverse() : [current, ...result].reverse();
+            }
+            
+            const c = s[0];
+            const cs = s.slice(1);
+            
+            if (logicalOps.includes(c)) {
+                return current === "" 
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, "", [c, current, ...result]);
+            } else if (c === ' ') {
+                return getToken(cs, current, result);
+            } else if (c === '0' || c === '1') {
+                return current === ""
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, current + c, result);
+            } else {
+                return getToken(cs, current + c, result);
+            }
+        }
+        
+        function parseExpr(tokens) {
+	    console.log("parseExpr", tokens);
+            const [expr, remaining] = parseEq(tokens);
+            if (remaining.length !== 0) throw new Error("Unexpected tokens remaining");
+            return expr;
+        }
+        
+        function parseEq(tokens) {
+	    console.log("parseEq", tokens);
+            const [left, rest] = parseImpl(tokens);
+            if (rest[0] === "≡") {
+                const [right, rest2] = parseEq(rest.slice(1));
+                return [Expr.Eq(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseImpl(tokens) {
+	    console.log("parseImpl", tokens);
+            const [left, rest] = parseNor(tokens);
+            if (rest[0] === "→") {
+                const [right, rest2] = parseImpl(rest.slice(1));
+                return [Expr.Impl(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseNor(tokens) {
+	    console.log("parseNor", tokens);
+            const [left, rest] = parseNand(tokens);
+            if (rest[0] === "↓") {
+                const [right, rest2] = parseNor(rest.slice(1));
+                return [Expr.Nor(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseNand(tokens) {
+	    console.log("parseNand", tokens);
+            const [left, rest] = parseXor(tokens);
+            if (rest[0] === "|") {
+                const [right, rest2] = parseNand(rest.slice(1));
+                return [Expr.Nand(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseXor(tokens) {
+	    console.log("parseXor", tokens);
+            const [left, rest] = parseOr(tokens);
+            if (rest[0] === "⊕") {
+                const [right, rest2] = parseXor(rest.slice(1));
+                return [Expr.Xor(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseOr(tokens) {
+	    console.log("parseOr", tokens);
+            const [left, rest] = parseAnd(tokens);
+            if (rest[0] === "∨") {
+                const [right, rest2] = parseOr(rest.slice(1));
+                return [Expr.Or(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseAnd(tokens) {
+	    console.log("parseAnd", tokens);
+            const [left, rest] = parseTerm(tokens);
+            if (rest[0] === "∧") {
+                const [right, rest2] = parseAnd(rest.slice(1));
+                return [Expr.And(left, right), rest2];
+            }
+            return [left, rest];
+        }
+        
+        function parseTerm(tokens) {
+	    console.log("parseTerm", tokens);
+            if (tokens[0] === "(") {
+                const [expr, rest] = parseEq(tokens.slice(1));
+                if (rest[0] !== ")") throw new Error("Expected closing parenthesis");
+                return [expr, rest.slice(1)];
+            } else if (tokens[0] === "¬") {
+                const [expr, rest] = parseTerm(tokens.slice(1));
+                return [Expr.Not(expr), rest];
+            } else if (tokens[0] === "0") {
+                return [Expr.Bool(false), tokens.slice(1)];
+            } else if (tokens[0] === "1") {
+                return [Expr.Bool(true), tokens.slice(1)];
+            } else if (tokens.length > 0 && !logicalOps.includes(tokens[0])) {
+                return [Expr.Var(tokens[0]), tokens.slice(1)];
+            }
+            throw new Error("Error in func");
+        }
+        
+        function extractVars(expr) {
+            const vars = getExpr(expr);
+            return [...new Set(vars)].sort();
+        }
+        
+        function getExpr(expr) {
+            switch (expr.type) {
+                case "Var": return [expr.varname];
+                case "And":
+                case "Or":
+                case "Xor":
+                case "Nand":
+                case "Nor":
+                case "Impl":
+                case "Eq":
+                    return [...getExpr(expr.left), ...getExpr(expr.right)];
+                case "Not": return getExpr(expr.expr);
+                case "Bool": return [];
+                default: throw new Error("Unknown expression type");
+            }
+        }
+        
+        function eval(expr, vars) {
+            const varNames = extractVars(expr);
+            const varMap = new Map(varNames.map((name, i) => [name, vars[i]]));
+            return evalExpr(expr, varMap);
+        }
+        
+        function evalExpr(expr, varMap) {
+            switch (expr.type) {
+                case "Var":
+                    if (!varMap.has(expr.varname)) throw new Error("Unknown variable");
+                    return varMap.get(expr.varname);
+                case "And": return evalExpr(expr.left, varMap) && evalExpr(expr.right, varMap);
+                case "Or": return evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap);
+                case "Xor": return evalExpr(expr.left, varMap) !== evalExpr(expr.right, varMap);
+                case "Nand": return !(evalExpr(expr.left, varMap) && evalExpr(expr.right, varMap));
+                case "Nor": return !(evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap));
+                case "Impl": return !evalExpr(expr.left, varMap) || evalExpr(expr.right, varMap);
+                case "Eq": return evalExpr(expr.left, varMap) === evalExpr(expr.right, varMap);
+                case "Not": return !evalExpr(expr.expr, varMap);
+                case "Bool": return expr.value;
+                default: throw new Error("Unknown expression type");
+            }
+        }
+        
+        function buildFunc(funcString) {
+            const expr = parseExpr(depleteFunc(funcString));
+	    console.log("returned expr:", expr);
+            return vars => eval(expr, vars);
+        }
+        
+        function buildVars(funcString) {
+            if (!funcString) return [];
+            return extractVars(parseExpr(depleteFunc(funcString)));
+        }
+        
+        function buildFuncVector(funcString) {
+            if (!funcString) return [];
+            const vars = buildVars(funcString);
+            return generatePoints(vars.length).map(buildFunc(funcString));
+        }
+        
+        function convertVectorToString(vector) {
+            return vector.map(b => b ? '1' : '0').join('');
+        }
+        
+        function convertStringToVector(str) {
+            return [...str].map(c => c === '1');
+        }
+        
+        function generatePoints(number) {
+            if (number <= 0) return [[]];
+            const rest = generatePoints(number - 1);
+            return [...rest.map(x => [false, ...x]), ...rest.map(x => [true, ...x])];
+        }
+        
+        function numberOfVars(func) {
+	    console.log("numberofvars", func);
+            return func.length === 0 ? 0 : Math.floor(Math.log2(func.length));
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const graphContainer = document.getElementById('graph-container');
+            const createNodeBtn = document.getElementById('create-node');
+            const createEdgeBtn = document.getElementById('create-edge');
+            const deleteSelectedBtn = document.getElementById('delete-selected');
+            const calculateCheckBtn = document.getElementById('calculate-check');
+            const calculateProofBtn = document.getElementById('calculate-proof');
+            const newFaultBtn = document.getElementById('new-fault');
+            const createCloseBtn = document.getElementById('create-close');
+            const createOpenBtn = document.getElementById('create-open');
+            const confirmFaultBtn = document.getElementById('create-fault');
+            const hintElement = document.getElementById('hint');
+            const faultsList = document.getElementById('faults-list');
+            const elementButtons = document.getElementById('elem-butns');
+            
+            let nodes = [];
+            let edges = [];
+            let faults = [];
+            let openfaults = [];
+            let closefaults = [];
+            let selectedElement = null;
+            let isCreatingEdge = false;
+            let isCreatingFault = false;
+            let edgeStartNode = null;
+            let nodeCounter = 1;
+            let selectedEdgesForFault = [];
+            
+            const beginNode = createNode(50, 200, 'начало');
+            beginNode.classList.add('begin-node');
+            
+            const endNode = createNode(graphContainer.offsetWidth - 70, 200, 'конец');
+            endNode.classList.add('end-node');
+            
+            function createNode(x, y, name = '') {
+                const node = document.createElement('div');
+                node.className = 'node';
+                node.dataset.id = nodeCounter++;
+                if (name) node.dataset.name = name;
+                
+                node.style.left = x + 'px';
+                node.style.top = y + 'px';
+                
+                const handleNodeClick = (e) => {
+                    e.stopPropagation();
+                    selectElement(node);
+                    
+                    if (isCreatingEdge) {
+                        if (!edgeStartNode) {
+                            edgeStartNode = node;
+                            hintElement.textContent = 'Выберите вторую точку контакта';
+                        } else if (edgeStartNode !== node) {
+                            createEdge(edgeStartNode, node);
+                            cancelEdgeCreation();
+                        }
+                    }
+                };
+                
+                node.addEventListener('click', handleNodeClick);
+                node.addEventListener('touchend', handleNodeClick);
+                
+                let isDragging = false;
+                let startX, startY, startLeft, startTop;
+                
+                const handleTouchStart = (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    const rect = node.getBoundingClientRect();
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    selectElement(node);
+                };
+                
+                const handleTouchMove = (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - startX;
+                    const dy = touch.clientY - startY;
+                    
+                    const containerRect = graphContainer.getBoundingClientRect();
+                    let newLeft = startLeft + dx - containerRect.left;
+                    let newTop = startTop + dy - containerRect.top;
+                    
+                    newLeft = Math.max(0, Math.min(containerRect.width - node.offsetWidth, newLeft));
+                    newTop = Math.max(0, Math.min(containerRect.height - node.offsetHeight, newTop));
+                    
+                    node.style.left = newLeft + 'px';
+                    node.style.top = newTop + 'px';
+                    updateConnectedEdges(node);
+                };
+                
+                const handleTouchEnd = () => {
+                    isDragging = false;
+                };
+                
+                node.addEventListener('touchstart', handleTouchStart, { passive: false });
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('touchend', handleTouchEnd);
+                
+                graphContainer.appendChild(node);
+                nodes.push(node);
+                return node;
+            }
+            
+            function createEdge(node1, node2) {
+                const edgeExists = edges.some(edge => 
+                    (edge.startNode === node1 && edge.endNode === node2) ||
+                    (edge.startNode === node2 && edge.endNode === node1)
+                );
+                
+                if (edgeExists) {
+                    alert('Ребро уже существует между этими узлами!');
+                    return;
+                }
+                
+                const edge = document.createElement('div');
+                edge.className = 'edge';
+                
+                const edgeLabelContainer = document.createElement('div');
+                edgeLabelContainer.className = 'edge-label-container';
+                
+                const edgeLabel = document.createElement('input');
+                edgeLabel.className = 'edge-label';
+                edgeLabel.type = 'text';
+                edgeLabel.maxLength = 3;
+                edgeLabel.value = '';
+                edgeLabel.placeholder = '...';
+                
+                edgeLabelContainer.appendChild(edgeLabel);
+
+                const handleEdgeClick = (e) => {
+		    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (isCreatingFault) {
+                        const edgeObj = edges.find(ed => 
+                            ed.element === edge || ed.labelContainer === edge
+                        );
+                        if (edgeObj) {
+                            toggleEdgeForFault(edgeObj);
+                        }
+                    } else {
+                        selectElement(edge);
+                    }
+                };
+                
+                edge.addEventListener('click', handleEdgeClick);
+                edge.addEventListener('touchend', handleEdgeClick);
+                
+                edgeLabelContainer.addEventListener('click', handleEdgeClick);
+                edgeLabelContainer.addEventListener('touchend', handleEdgeClick);
+                
+                graphContainer.appendChild(edge);
+                graphContainer.appendChild(edgeLabelContainer);
+                
+                const edgeObj = {
+                    element: edge,
+                    labelContainer: edgeLabelContainer,
+                    label: edgeLabel,
+                    startNode: node1,
+                    endNode: node2
+                };
+                
+                edges.push(edgeObj);
+                updateEdge(edgeObj);
+                return edgeObj;
+            }
+            
+            createNodeBtn.addEventListener('click', function() {
+                createNode(
+                    Math.random() * (graphContainer.offsetWidth - 100) + 50,
+                    Math.random() * (graphContainer.offsetHeight - 100) + 50
+                );
+            });
+
+            elementButtons.addEventListener('click', function(e) {
+                if (e.target.classList.contains('symbol-button')) {
+                    const symbol = e.target.getAttribute('data-symbol');
+                    insertSymbol(symbol);
+                }
+            });
+            
+            elementButtons.addEventListener('touchend', function(e) {
+                const target = e.target;
+                if (target.classList.contains('symbol-button')) {
+                    const symbol = target.getAttribute('data-symbol');
+                    insertSymbol(symbol);
+                    e.preventDefault();
+                }
+            });
+
+	    createEdgeBtn.addEventListener('click', function() {
+                if (!isCreatingEdge && !isCreatingFault) {
+                    isCreatingEdge = true;
+                    edgeStartNode = null;
+                    createEdgeBtn.classList.add('edge-mode');
+                    createEdgeBtn.textContent = 'Отменить создание';
+                    hintElement.textContent = 'Выберите первую точку контакта';
+                } else {
+                    cancelEdgeCreation();
+                }
+            });
+	
+	    deleteSelectedBtn.addEventListener('click', function() {
+                if (selectedElement) {
+                    if (selectedElement.classList.contains('node')) {
+                        deleteNode(selectedElement);
+                    } else if (selectedElement.classList.contains('edge') || 
+                               selectedElement.classList.contains('edge-label-container')) {
+                        deleteEdge(selectedElement);
+                    }
+                    selectedElement = null;
+                }
+            });
+	
+	    calculateCheckBtn.addEventListener('click', function() {
+                calculateCheck();
+            });
+            
+            calculateProofBtn.addEventListener('click', function() {
+                calculateProof();
+            });
+
+            newFaultBtn.addEventListener('click', function() {
+                if (!isCreatingFault && !isCreatingEdge) {
+                    startCreatingFault();
+                } else {
+                    cancelCreatingFault();
+                }
+            });
+            
+            createCloseBtn.addEventListener('click', function() {
+                if (selectedEdgesForFault.length > 0) {
+		    closefaults = [...closefaults, ...selectedEdgesForFault];
+		    selectedEdgesForFault.forEach(edge => {
+			edge.element.classList.remove('edge-fault-selected');
+		    });
+                    selectedEdgesForFault = [];
+		    hintElement.textContent = `На данный момент выбраны разрывы: ${closefaults.map(edge => edge.label.value || 'unnamed').join(',')}, замыкания: ${openfaults.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите остальные неисправности или завершите ввод неисправности.`;
+		    confirmFaultBtn.disabled = false;
+                }
+            });
+
+	    confirmFaultBtn.addEventListener('click', function() {
+		if (selectedEdgesForFault.length > 0) {
+		    hintElement.textContent = 'Имеются выбранные контакты, укажите тип неисправности для них или отмените выбор перед тем как создать неисправность';
+		    confirmFaultBtn.disabled = true;
+		    return;
+		}
+		createFault(openfaults, closefaults);
+		cancelCreatingFault();
+		openfaults = [];
+		closefaults = [];
+	    });
+            
+            createOpenBtn.addEventListener('click', function() {
+                if (selectedEdgesForFault.length > 0) {
+		    openfaults = [...openfaults, ...selectedEdgesForFault];
+		    selectedEdgesForFault.forEach(edge => {
+			edge.element.classList.remove('edge-fault-selected');
+		    });
+		    selectedEdgesForFault = [];
+		    hintElement.textContent = `На данный момент выбраны разрывы: ${closefaults.map(edge => edge.label.value || 'unnamed').join(',')}, замыкания: ${openfaults.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите остальные неисправности или завершите ввод неисправности.`;
+		    confirmFaultBtn.disabled = false;
+                }
+            });
+            
+            function insertSymbol(symbol) {
+                if (selectedElement && (selectedElement.classList.contains('edge') || 
+                    selectedElement.classList.contains('edge-label-container'))) {
+                    
+                    let edgeLabel;
+                    
+                    if (selectedElement.classList.contains('edge')) {
+                        const edgeObj = edges.find(e => e.element === selectedElement);
+                        edgeLabel = edgeObj?.label;
+                    } else {
+                        const edgeObj = edges.find(e => e.labelContainer === selectedElement);
+                        edgeLabel = edgeObj?.label;
+                    }
+                    
+                    if (edgeLabel) {
+                        edgeLabel.focus();
+                        
+                        const startPos = edgeLabel.selectionStart;
+                        const endPos = edgeLabel.selectionEnd;
+                        const currentValue = edgeLabel.value;
+                        
+                        edgeLabel.value = currentValue.substring(0, startPos) + symbol + 
+                                         currentValue.substring(endPos);
+                        
+                        setTimeout(() => {
+                            edgeLabel.selectionStart = edgeLabel.selectionEnd = startPos + symbol.length;
+                        }, 0);
+                    }
+                }
+            }
+            
+            graphContainer.addEventListener('touchend', function(e) {
+                if (selectedElement && !isCreatingFault) {
+                    selectedElement.classList.remove('selected');
+                    selectedElement = null;
+                }
+                
+                if (isCreatingEdge) {
+                    cancelEdgeCreation();
+                }
+                
+                if (e.touches && e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+	    function selectElement(element) {
+                if (isCreatingFault) return;
+                
+                if (selectedElement) {
+                    selectedElement.classList.remove('selected');
+                }
+                
+                selectedElement = element;
+                selectedElement.classList.add('selected');
+            }
+            
+	    function updateConnectedEdges(node) {
+                edges.forEach(edge => {
+                    if (edge.startNode === node || edge.endNode === node) {
+                        updateEdge(edge);
+                    }
+                });
+            }
+
+	    function startCreatingFault() {
+                isCreatingFault = true;
+                newFaultBtn.classList.add('fault-mode');
+                createCloseBtn.disabled = false;
+                createOpenBtn.disabled = false;
+                hintElement.textContent = 'Выберите контакты, которые будут неисправны и после выберите тип неисправности.';
+                
+                selectedEdgesForFault.forEach(edge => {
+                    edge.element.classList.remove('edge-fault-selected');
+                });
+                selectedEdgesForFault = [];
+            }
+            
+            function cancelCreatingFault() {
+                isCreatingFault = false;
+                newFaultBtn.classList.remove('fault-mode');
+                createCloseBtn.disabled = true;
+                createOpenBtn.disabled = true;
+		confirmFaultBtn.disabled = true;
+		hintElement.textContent = '';
+                
+                selectedEdgesForFault.forEach(edge => {
+                    edge.element.classList.remove('edge-fault-selected');
+                });
+                selectedEdgesForFault = [];
+		openfaults = [];
+		closefaults = [];
+            }
+	
+	    function cancelEdgeCreation() {
+                isCreatingEdge = false;
+                edgeStartNode = null;
+                createEdgeBtn.classList.remove('edge-mode');
+                createEdgeBtn.textContent = 'Создать контакт';
+		hintElement.textContent = '';
+            }
+	
+	    function updateEdge(edge) {
+                const startRect = edge.startNode.getBoundingClientRect();
+                const endRect = edge.endNode.getBoundingClientRect();
+                const containerRect = graphContainer.getBoundingClientRect();
+                
+                const startX = startRect.left - containerRect.left + startRect.width / 2;
+                const startY = startRect.top - containerRect.top + startRect.height / 2;
+                const endX = endRect.left - containerRect.left + endRect.width / 2;
+                const endY = endRect.top - containerRect.top + endRect.height / 2;
+                
+                const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                
+                edge.element.style.width = length + 'px';
+                edge.element.style.left = startX + 'px';
+                edge.element.style.top = startY + 'px';
+                edge.element.style.transformOrigin = '0 0';
+                edge.element.style.transform = 'rotate(' + angle + 'deg)';
+                edge.element.style.borderTop = '2px solid #333';
+                
+                const labelX = (startX + endX) / 2 - 15;
+                const labelY = (startY + endY) / 2 - 10;
+                edge.labelContainer.style.left = labelX + 'px';
+                edge.labelContainer.style.top = labelY + 'px';
+            }
+
+	    function deleteNode(node) {
+                edges = edges.filter(edge => {
+                    if (edge.startNode === node || edge.endNode === node) {
+                        graphContainer.removeChild(edge.element);
+                        graphContainer.removeChild(edge.labelContainer);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                graphContainer.removeChild(node);
+                nodes = nodes.filter(n => n !== node);
+            }
+
+	    function deleteEdge(edgeElement) {
+                let edgeToDelete = null;
+                
+                if (edgeElement.classList.contains('edge')) {
+                    edgeToDelete = edges.find(e => e.element === edgeElement);
+                } else if (edgeElement.classList.contains('edge-label-container')) {
+                    edgeToDelete = edges.find(e => e.labelContainer === edgeElement);
+                }
+                
+                if (edgeToDelete) {
+                    graphContainer.removeChild(edgeToDelete.element);
+                    graphContainer.removeChild(edgeToDelete.labelContainer);
+                    edges = edges.filter(e => e !== edgeToDelete);
+                    
+                    faults.forEach(fault => {
+                        const openindex = fault.openfaults.findIndex(e => e === edgeToDelete);
+                        const closeindex = fault.closefaults.findIndex(e => e === edgeToDelete);
+			if (openindex !== -1) {
+                            fault.openfaults.splice(openindex, 1);
+                        }
+			if (closeindex !== -1) {
+			    fault.closefaults.splice(closeindex, 1);
+			}
+                    });
+		    faults = faults.filter(fault => fault.openfaults.length > 0 || fault.closefaults.length > 0);
+                    updateFaultsList();
+                }
+            }
+	
+	    function toggleEdgeForFault(edge) {
+                const index = selectedEdgesForFault.findIndex(e => e === edge);
+                
+                if (index === -1) {
+                    selectedEdgesForFault.push(edge);
+                    edge.element.classList.add('edge-fault-selected');
+                } else {
+                    selectedEdgesForFault.splice(index, 1);
+                    edge.element.classList.remove('edge-fault-selected');
+                }
+                
+                if (selectedEdgesForFault.length > 0) {
+			hintElement.textContent = `Выбраны контакты: ${selectedEdgesForFault.map(edge => edge.label.value || 'unnamed').join(',')}. Укажите тип неисправности.`;
+                } else {
+                    hintElement.textContent = 'Выберите хотя бы один контакт.';
+                }
+            }
+
+	    function createFault(openfaults, closefaults) {
+                const faultId = faults.length + 1;
+		faults.push({
+		    faultId: faultId,
+		    openfaults: openfaults || [],
+		    closefaults: closefaults || [],
+		});
+                updateFaultsList();
+            }
+            
+            function updateFaultsList() {
+                faultsList.innerHTML = '';
+                
+                if (faults.length === 0) {
+                    faultsList.innerHTML = '<p>Нет неисправностей</p>';
+                    return;
+                }
+                
+                faults.forEach(fault => {
+                    const faultElement = document.createElement('div');
+                    faultElement.className = 'fault-item';
+		    const opennames = fault.openfaults.map(edge => edge.label.value || 'unnamed');
+		    const closenames = fault.closefaults.map(edge => edge.label.value || 'unnamed');
+                    faultElement.innerHTML = `
+                        <span>${`Неисправность ${fault.faultId} Разрывы: [${closenames.join(', ')}], Замыкания: [${opennames.join(', ')}]`}</span>
+                        <button class="delete-fault" data-id="${fault.faultId}">Удалить</button>
+                    `;
+                    faultsList.appendChild(faultElement);
+                });
+                
+                document.querySelectorAll('.delete-fault').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const faultId = parseInt(this.getAttribute('data-id'));
+                        faults = faults.filter(f => f.faultId !== faultId);
+                        updateFaultsList();
+                    });
+                });
+            }
+
+	    function calculateCheck() {
+		const tablesContainer = document.getElementById('tables-container');
+                tablesContainer.innerHTML = '';
+                
+                const normalPaths = findAllPaths(beginNode, endNode);
+		const goodFunc = generateFunction(normalPaths);
+                const faultFuncs = [];
+
+                faults.forEach(fault => {
+                    const faultPaths = findAllPaths(
+                        beginNode, 
+                        endNode, 
+			fault.openfaults, 
+			fault.closefaults
+                    );
+		    faultFuncs.push(generateFunction(faultPaths));
+                });
+		console.log('Funcs after:', goodFunc, faultFuncs);
+		const [func, preparedfuncs, points, testTable] = createTruthTable(goodFunc, faultFuncs, 'Проверочный тест');
+                if (testTable) {
+                    tablesContainer.appendChild(testTable);
+		    const result = createXorTable(func, preparedfuncs, points, 'Матрица различий');
+                    tablesContainer.appendChild(result.printable);
+		    const unoptimizedCNF = buildCNF(result);
+		    console.log(unoptimizedCNF);
+		    const res = expandCNF(unoptimizedCNF.cnf);
+		    console.log(res);
+		    showResult(unoptimizedCNF.cnf + ' => *магия* => ' + res);
+                } else {
+                    alert('Невозможно построить таблицу для введенной функции');
+                }
+            }
+
+	    function calculateProof() {
+		const tablesContainer = document.getElementById('tables-container');
+                tablesContainer.innerHTML = '';
+                
+                const normalPaths = findAllPaths(beginNode, endNode);
+		const goodFunc = generateFunction(normalPaths);
+                const faultFuncs = [];
+
+                faults.forEach(fault => {
+                    const faultPaths = findAllPaths(
+                        beginNode, 
+                        endNode, 
+                        fault.openfaults, 
+                        fault.closefaults
+                    );
+		    faultFuncs.push(generateFunction(faultPaths));
+                });
+		console.log('Funcs after:', goodFunc, faultFuncs);
+		const [func, preparedfuncs, points, testTable] = createTruthTable(goodFunc, faultFuncs, 'Диагностический  тест');
+                if (testTable) {
+                    tablesContainer.appendChild(testTable);
+		    const result = createFullXorTable(func, preparedfuncs, points, 'Матрица различий');
+                    tablesContainer.appendChild(result.printable);
+		    const unoptimizedCNF = buildCNF(result);
+		    console.log(unoptimizedCNF);
+		    const res = expandCNF(unoptimizedCNF.cnf);
+		    console.log(res);
+		    showResult(unoptimizedCNF.cnf + ' => *магия* => ' + res);
+                } else {
+                    alert('Невозможно построить таблицу для введенной функции');
+                }
+            }
+	
+	    function showResult(resultText) {
+		const resultContainer = document.getElementById('result-container');
+		resultContainer.innerHTML = '';
+		const resultElement = document.createElement('div');
+		resultElement.textContent = resultText
+		resultContainer.appendChild(resultElement);
+	    }
+
+            function generateFunction(arr) {
+		const conjuctions = arr.map(subarr => subarr.join("∧"));
+		return conjuctions.join("∨");
+            }
+
+	    function findAllPaths(startNode, endNode, openfaults, closefaults) {
+                const paths = [];
+                const visitedNodes = new Set();
+                const currentPath = [];
+                
+                function dfs(node) {
+                    if (node === endNode) {
+                        paths.push([...currentPath]);
+                        return;
+                    }
+                    
+                    visitedNodes.add(node);
+                    
+                    const connectedEdges = edges.filter(edge => 
+                        edge.startNode === node || edge.endNode === node
+                    );
+                    
+                    for (const edge of connectedEdges) {
+                        const neighbor = edge.startNode === node ? edge.endNode : edge.startNode;
+                        if (!visitedNodes.has(neighbor)) {
+                            let label = edge.label.value || 'unnamed';
+                            
+                            if (openfaults && openfaults.includes(edge)) {
+                                label = '1';
+                            }
+			    if (closefaults && closefaults.includes(edge)) {
+				label = '0';
+			    }
+                            
+                            currentPath.push(label);
+                            
+                            dfs(neighbor);
+                            
+                            currentPath.pop();
+                        }
+                    }
+                    
+                    visitedNodes.delete(node);
+                }
+                
+                dfs(startNode);
+                return paths;
+            }
+	
+	    function createTruthTable(funcString, preparedFuncs, title) {
+                if (!funcString || !preparedFuncs) return null;
+                
+                try {
+                    const vars = buildVars(funcString);
+                    const func = buildFunc(funcString);
+                    const preparedfuncs = preparedFuncs.map(x => buildFunc(x));
+		    console.log(preparedFuncs, preparedfuncs);
+                    const points = generatePoints(vars.length);
+                    
+                    const table = document.createElement('table');
+                    table.className = 'truth-table';
+                    
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    
+                    vars.forEach(v => {
+                        const th = document.createElement('th');
+                        th.textContent = v;
+                        headerRow.appendChild(th);
+                    });
+                    
+                    const thResult = document.createElement('th');
+                    thResult.textContent = 'f';
+                    headerRow.appendChild(thResult);
+                    
+                    preparedfuncs.forEach((_, i) => {
+                        const th = document.createElement('th');
+                        th.textContent = `f${i + 1}`;
+                        headerRow.appendChild(th);
+                    });
+                    
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+                    
+                    const tbody = document.createElement('tbody');
+                    
+                    points.forEach(point => {
+                        const row = document.createElement('tr');
+                        
+                        point.forEach(val => {
+                            const td = document.createElement('td');
+                            td.textContent = val ? '1' : '0';
+                            row.appendChild(td);
+                        });
+                        
+                        const tdResult = document.createElement('td');
+                        tdResult.textContent = func(point) ? '1' : '0';
+                        row.appendChild(tdResult);
+                        
+                        preparedfuncs.forEach(prepFunc => {
+                            const td = document.createElement('td');
+                            td.textContent = prepFunc(point) ? '1' : '0';
+                            row.appendChild(td);
+                        });
+                        
+                        tbody.appendChild(row);
+                    });
+                    
+                    table.appendChild(tbody);
+                    
+                    const tableContainer = document.createElement('div');
+                    const titleElement = document.createElement('div');
+                    titleElement.className = 'table-title';
+                    titleElement.textContent = title;
+                    
+                    tableContainer.appendChild(titleElement);
+                    tableContainer.appendChild(table);
+		    console.log("LogicTable", tableContainer);
+                    
+		    return [buildFuncVector(funcString), preparedFuncs.map(x => buildFuncVector(x)), points, tableContainer];
+                } catch (e) {
+                    console.error('Ошибка при создании таблицы:', e);
+                    return null;
+                }
+            }
+	
+	    function createXorTable(funcResults, preparedFuncsResults, points, title) {
+                const xorData = [];
+                const pointMap = {};
+                
+                for (let i = 0; i < funcResults.length; i++) {
+                    const xorRow = preparedFuncsResults.map(prepFunc => 
+                        funcResults[i] ^ prepFunc[i] ? '1' : '0'
+                    ).join('');
+                    
+                    xorData.push(xorRow);
+                    
+                    if (!pointMap[xorRow]) pointMap[xorRow] = [];
+                    pointMap[xorRow].push(points[i]);
+                }
+            
+                const uniqueXor = [...new Set(xorData)];
+            
+                const xorTable = document.createElement('table');
+                xorTable.className = 'truth-table';
+                xorTable.style.borderCollapse = 'collapse';
+                xorTable.style.margin = '20px';
+                xorTable.style.fontFamily = 'Arial, sans-serif';
+            
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.style.backgroundColor = '#f2f2f2';
+            
+                const addHeaderCell = (text) => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    th.style.padding = '8px 12px';
+                    th.style.border = '1px solid #ddd';
+                    th.style.textAlign = 'center';
+                    headerRow.appendChild(th);
+                };
+            
+                addHeaderCell('Y');
+                preparedFuncsResults.forEach((_, i) => addHeaderCell(`XOR ${i+1}`));
+                addHeaderCell('Точки');
+                
+                thead.appendChild(headerRow);
+                xorTable.appendChild(thead);
+            
+                const tbody = document.createElement('tbody');
+            
+                const addCell = (text, isFirstCol = false) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    td.style.padding = '8px 12px';
+                    td.style.border = '1px solid #ddd';
+                    td.style.textAlign = 'center';
+                    if (isFirstCol) td.style.fontWeight = 'bold';
+                    return td;
+                };
+            
+                uniqueXor.forEach((xorStr, idx) => {
+                    const row = document.createElement('tr');
+                    if (idx % 2 === 0) row.style.backgroundColor = '#f9f9f9';
+            
+                    row.appendChild(addCell(`y${idx+1}`, true));
+                    xorStr.split('').forEach(bit => row.appendChild(addCell(bit)));
+                    const pointsStr = pointMap[xorStr]
+                        .map(p => p.map(v => v ? '1' : '0').join(''))
+                        .join(', ');
+                    row.appendChild(addCell(pointsStr));
+                    
+                    tbody.appendChild(row);
+                });
+
+                xorTable.appendChild(tbody);
+
+		const tableContainer = document.createElement('div');
+                const titleElement = document.createElement('div');
+                titleElement.className = 'table-title';
+                titleElement.textContent = title;
+                    
+                tableContainer.appendChild(titleElement);
+                tableContainer.appendChild(xorTable);
+            
+		return {
+                    table: xorTable,
+                    correspondence: Object.fromEntries(
+                        uniqueXor.map((xorStr, idx) => [
+                            `y${idx+1}`, 
+                            {
+                                xor: xorStr,
+                                points: pointMap[xorStr]
+                            }
+                        ])
+                    ),
+		    printable: tableContainer
+                };
+            }
+
+	    function createFullXorTable(funcResults, preparedFuncsResults, points, title) {
+                const allFunctions = [funcResults, ...preparedFuncsResults];
+                const funcNames = ['f', ...preparedFuncsResults.map((_, i) => `f${i+1}`)];
+            
+                const pairs = [];
+                for (let i = 0; i < allFunctions.length; i++) {
+                    for (let j = i + 1; j < allFunctions.length; j++) {
+                        pairs.push([i, j]);
+                    }
+                }
+            
+                const xorData = [];
+                const pointMap = {};
+                
+                for (let i = 0; i < points.length; i++) {
+                    const xorRow = pairs.map(([idx1, idx2]) => 
+                        allFunctions[idx1][i] ^ allFunctions[idx2][i] ? '1' : '0'
+                    ).join('');
+                    
+                    xorData.push(xorRow);
+                    
+                    if (!pointMap[xorRow]) pointMap[xorRow] = [];
+                    pointMap[xorRow].push(points[i]);
+                }
+            
+                const uniqueXor = [...new Set(xorData)];
+            
+                const xorTable = document.createElement('table');
+                xorTable.className = 'xor-table';
+                xorTable.style.borderCollapse = 'collapse';
+                xorTable.style.margin = '20px 0';
+                xorTable.style.fontFamily = 'Arial, sans-serif';
+            
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.style.backgroundColor = '#f2f2f2';
+            
+                const addHeaderCell = (text) => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    th.style.padding = '8px 12px';
+                    th.style.border = '1px solid #ddd';
+                    th.style.textAlign = 'center';
+                    headerRow.appendChild(th);
+                };
+            
+                addHeaderCell('Y');
+                pairs.forEach(([i, j]) => {
+                    addHeaderCell(`${funcNames[i]}⊕${funcNames[j]}`);
+                });
+                addHeaderCell('Точки');
+                
+                thead.appendChild(headerRow);
+                xorTable.appendChild(thead);
+            
+                const tbody = document.createElement('tbody');
+            
+                const addCell = (text, isFirstCol = false) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    td.style.padding = '8px 12px';
+                    td.style.border = '1px solid #ddd';
+                    td.style.textAlign = 'center';
+                    if (isFirstCol) td.style.fontWeight = 'bold';
+                    return td;
+                };
+            
+                uniqueXor.forEach((xorStr, idx) => {
+                    const row = document.createElement('tr');
+                    if (idx % 2 === 0) row.style.backgroundColor = '#f9f9f9';
+            
+                    row.appendChild(addCell(`y${idx+1}`, true));
+                    
+                    xorStr.split('').forEach(bit => row.appendChild(addCell(bit)));
+                    
+                    const pointsStr = pointMap[xorStr]
+                        .map(p => p.map(v => v ? '1' : '0').join(''))
+                        .join(', ');
+                    row.appendChild(addCell(pointsStr));
+                    
+                    tbody.appendChild(row);
+                });
+                
+                xorTable.appendChild(tbody);
+
+		const tableContainer = document.createElement('div');
+                const titleElement = document.createElement('div');
+                titleElement.className = 'table-title';
+                titleElement.textContent = title;
+                    
+                tableContainer.appendChild(titleElement);
+                tableContainer.appendChild(xorTable);
+            
+                return {
+                    table: xorTable,
+                    correspondence: Object.fromEntries(
+                        uniqueXor.map((xorStr, idx) => [
+                            `y${idx+1}`, 
+                            {
+                                xor: xorStr,
+                                points: pointMap[xorStr],
+                                xorPairs: pairs.map((pair, i) => ({
+                                    pair: `${funcNames[pair[0]]}⊕${funcNames[pair[1]]}`,
+                                    value: xorStr[i]
+                                }))
+                            }
+                        ])
+                    ),
+		    printable: tableContainer
+                };
+            }
+	
+	    function buildCNF(xorTableResult) {
+                const { correspondence } = xorTableResult;
+                const cnfParts = [];
+                
+                const columns = [];
+                const headerCells = xorTableResult.table.querySelectorAll('thead th:not(:first-child):not(:last-child)');
+                headerCells.forEach(th => columns.push(th.textContent));
+                
+                const columnData = {};
+                columns.forEach((col, colIndex) => {
+                    columnData[col] = [];
+                    Object.entries(correspondence).forEach(([y, data]) => {
+                        if (data.xor[colIndex] === '1') {
+                            columnData[col].push(y);
+                        }
+                    });
+                });
+                
+                const cnfClauses = [];
+                Object.entries(columnData).forEach(([col, ys]) => {
+                    if (ys.length > 0) {
+                        cnfClauses.push(`(${ys.join(' + ')})`);
+                    }
+                });
+                
+                const fullCNF = cnfClauses.join(' * ');
+                
+                const cnfContainer = document.createElement('div');
+                cnfContainer.className = 'cnf-container';
+                
+                const title = document.createElement('h3');
+                title.textContent = 'КНФ:';
+                cnfContainer.appendChild(title);
+                
+                const cnfElement = document.createElement('div');
+                cnfElement.className = 'cnf-formula';
+                cnfElement.textContent = fullCNF || '1';
+                cnfContainer.appendChild(cnfElement);
+                
+                const explanation = document.createElement('div');
+                explanation.className = 'cnf-explanation';
+                explanation.innerHTML = `
+                    <p>Где:</p>
+                    <ul>
+                        ${Object.entries(correspondence).map(([y, data]) => 
+                            `<li>${y} = ${data.points.map(p => p.map(v => v ? '1' : '0').join('')).join(', ')}</li>`
+                        ).join('')}
+                    </ul>
+                `;
+                cnfContainer.appendChild(explanation);
+                
+                return {
+                    cnf: fullCNF,
+                    element: cnfContainer,
+                    columnData,
+                    correspondence
+                };
+            }
+
+            function expandCNF(cnf) {
+                let conjuncts = cnf.split('*')
+                    .map(c => c.trim().replace(/[()]/g, ''))
+                    .filter(c => c.length > 0);
+                if (conjuncts.length === 0) return '';
+                if (conjuncts.length === 1) return conjuncts[0];
+                let currentExpr = conjuncts[0];
+                for (let i = 1; i < conjuncts.length; i++) {
+                    currentExpr = multiplyTwoExpressions(currentExpr, conjuncts[i]);
+                    currentExpr = applyAbsorption(currentExpr);
+                }
+                return currentExpr;
+            }
+            
+            function multiplyTwoExpressions(expr1, expr2) {
+                const terms1 = expr1.split('+').map(t => t.trim());
+                const terms2 = expr2.split('+').map(t => t.trim());
+                let result = [];
+                for (const t1 of terms1) {
+                    for (const t2 of terms2) {
+                        const combined = [...new Set([...t1.split('*'), ...t2.split('*')])]
+                            .filter(v => v)
+                            .sort()
+                            .join('*');
+                        result.push(combined);
+                    }
+                }
+                return result.join(' + ');
+            }
+            
+            function applyAbsorption(expr) {
+                const terms = expr.split('+').map(t => t.trim().split('*'));
+                const absorbedTerms = [];
+                terms.forEach(currentTerm => {
+                    const isAbsorbed = absorbedTerms.some(existingTerm => {
+                        return existingTerm.every(v => currentTerm.includes(v));
+                    });
+                    if (!isAbsorbed) {
+                        for (let i = absorbedTerms.length - 1; i >= 0; i--) {
+                            if (currentTerm.every(v => absorbedTerms[i].includes(v))) {
+                                absorbedTerms.splice(i, 1);
+                            }
+                        }
+                        absorbedTerms.push(currentTerm);
+                    }
+                });
+                return absorbedTerms
+                    .map(term => term.sort().join('*'))
+                    .join(' + ');
+            }
+
+        });
+    </script>
+</body>
+</html>
+

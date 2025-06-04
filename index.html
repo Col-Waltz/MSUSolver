@@ -34,8 +34,20 @@
 <body>
     <h1>Выберите калькулятор:</h1>
     
-    <a href="testscalculator.html" class="button">Калькулятор тестов</a>
+    <button onclick="redirectToTestCalculator()" class="button">Калькулятор тестов</button>
     
     <a href="contactschemecalculator.html" class="button">Калькулятор контактных схем</a>
+
+    <script>
+        function redirectToTestCalculator() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                window.location.href = "mobiletestscalculator.html";
+            } else {
+                window.location.href = "testscalculator.html";
+            }
+        }
+    </script>
 </body>
 </html>
