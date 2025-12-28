@@ -1,0 +1,1721 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор семантических таблиц</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .header {
+            background: #f8f9fa;
+            padding: 15px;
+            color: #212529;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .input-panel {
+            width: 400px;
+            background: #f8f9fa;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
+        }
+        
+        .output-panel {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .input-container {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #6c757d;
+        }
+        
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .symbol-button {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 3px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .symbol-button:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-1px);
+        }
+        
+        .clear-button, .build-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-weight: bold;
+            transition: all 0.2s;
+            background: #6c757d;
+            color: white;
+        }
+        
+        .clear-button:hover, .build-button:hover {
+            background: #5a6268;
+        }
+        
+        .keyboard-container {
+            margin-top: 15px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .tree-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        
+        .tree-wrapper {
+            position: relative;
+            min-width: 100%;
+            min-height: 100%;
+            padding: 40px 0;
+        }
+        
+        .node {
+            position: absolute;
+            background: white;
+            border: 1.5px solid #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            z-index: 2;
+            padding: 3px 5px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+            overflow: hidden;
+            line-height: 1.1;
+            min-width: 40px;
+            min-height: 25px;
+        }
+        
+        .node-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .edge {
+            position: absolute;
+            z-index: 1;
+        }
+        
+        .edge-line {
+            position: absolute;
+            background: #000;
+            transform-origin: 0 0;
+        }
+        
+        .edge-label {
+            position: absolute;
+            background: white;
+            padding: 1px 3px;
+            font-size: 9px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            white-space: nowrap;
+            z-index: 3;
+            pointer-events: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transform: translate(-50%, -50%);
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        
+        .zoom-button {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            user-select: none;
+        }
+        
+        .zoom-button:hover {
+            background: #e0e0e0;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #212529;
+            font-size: 24px;
+        }
+        
+        h5 {
+            color: #6c757d;
+            font-weight: normal;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Калькулятор семантических таблиц</h2>
+    </div>
+    
+    <div class="content">
+        <div class="input-panel">
+            <h5>Введите формулу логики предикатов для построения семантической таблицы. Обратите внимание, что в целях избежания путаницы просьба для кванторов существования и всеобщности расставлять скобки после переменной квантора.</h5>
+            
+            <div class="input-container">
+                <input type="text" class="input-field" id="input-formula" placeholder="Пример: ∀x(P(x) → Q(x))">
+                <button class="clear-button" id="clear-button">Очистить</button>
+                <div class="keyboard-container" id="keyboard-1">
+                    <div class="button-row">
+                        <button class="symbol-button" data-symbol="p">p</button>
+                        <button class="symbol-button" data-symbol="q">q</button>
+                        <button class="symbol-button" data-symbol="r">r</button>
+                        <button class="symbol-button" data-symbol="x">x</button>
+                        <button class="symbol-button" data-symbol="y">y</button>
+                        <button class="symbol-button" data-symbol="(">(</button>
+                        <button class="symbol-button" data-symbol=")">)</button>
+                    </div>
+                    <div class="button-row">
+                        <button class="symbol-button" data-symbol="∧">∧</button>
+                        <button class="symbol-button" data-symbol="∨">∨</button>
+                        <button class="symbol-button" data-symbol="¬">¬</button>
+                        <button class="symbol-button" data-symbol="→">→</button>
+                        <button class="symbol-button" data-symbol="∃">∃</button>
+                        <button class="symbol-button" data-symbol="∀">∀</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="build-tree" class="build-button">Построить дерево</button>
+            </div>
+            
+            <div id="result-info" class="result-info" style="display: none;">
+                <div id="result-text"></div>
+            </div>
+        </div>
+        
+        <div class="output-panel">
+            <div id="tree-container" class="tree-container">
+                <div style="text-align: center; color: #999; padding: 50px;">
+                    <h3>Дерево появится здесь</h3>
+                    <p>Введите формулу и нажмите "Построить дерево"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const logicalOps = ["∧", "∨", "→", "(", ")", "¬", "∃", "∀"];
+        
+        class Expr {
+            static Var(varname) { return { type: "Var", varname }; }
+            static Predicate(name, args) { return { type: "Predicate", name, args }; }
+            static ForAll(variable, body) { return { type: "ForAll", variable, body }; }
+            static Exists(variable, body) { return { type: "Exists", variable, body }; }
+            static Impl(left, right) { return { type: "Impl", left, right }; }
+            static And(left, right) { return { type: "And", left, right }; }
+            static Or(left, right) { return { type: "Or", left, right }; }
+            static Not(expr) { return { type: "Not", expr }; }
+            static Bool(value) { return { type: "Bool", value }; }
+        }
+        
+        function getToken(s, current, result) {
+            if (s === "") {
+                return current === "" ? result.reverse() : [current, ...result].reverse();
+            }
+            
+            const c = s[0];
+            const cs = s.slice(1);
+            
+            // Расширим список логических операторов и добавим запятую и скобки
+            const specialChars = ["∧", "∨", "→", "(", ")", "¬", "∃", "∀", ","];
+            
+            if (specialChars.includes(c)) {
+                return current === "" 
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, "", [c, current, ...result]);
+            } else if (c === ' ') {
+                return getToken(cs, current, result);
+            } else if (c === '0' || c === '1') {
+                return current === ""
+                    ? getToken(cs, "", [c, ...result])
+                    : getToken(cs, current + c, result);
+            } else {
+                return getToken(cs, current + c, result);
+            }
+        }
+        
+        function parseExpr(tokens) {
+            const [expr, remaining] = parseImpl(tokens);
+            if (remaining.length !== 0) throw new Error("Unexpected tokens remaining");
+            return expr;
+        }
+        
+        function parseImpl(tokens) {
+            return parseBinaryLeftAssoc(tokens, "→", parseOr, Expr.Impl);
+        }
+        
+        function parseOr(tokens) {
+            return parseBinaryLeftAssoc(tokens, "∨", parseAnd, Expr.Or);
+        }
+        
+        function parseAnd(tokens) {
+            return parseBinaryLeftAssoc(tokens, "∧", parseTerm, Expr.And);
+        }
+        
+        function parseTerm(tokens) {
+            if (tokens.length >= 2 && (tokens[0] === "∀" || tokens[0] === "∃")) {
+                const quantifier = tokens[0];
+                const variable = tokens[1];
+                
+                if (logicalOps.includes(variable)) {
+                    throw new Error(`Ожидалась переменная после квантора ${quantifier}, получено: ${variable}`);
+                }
+                
+                if (tokens.length >= 3) {
+                    let body, rest;
+                    
+                    if (tokens[2] === "(") {
+                        [body, rest] = parseImpl(tokens.slice(3));
+                        if (rest.length === 0 || rest[0] !== ")") throw new Error("Expected closing parenthesis");
+                        rest = rest.slice(1);
+                    } else {
+                        [body, rest] = parseTerm(tokens.slice(2));
+                    }
+                    
+                    if (quantifier === "∀") {
+                        return [Expr.ForAll(variable, body), rest];
+                    } else {
+                        return [Expr.Exists(variable, body), rest];
+                    }
+                } else {
+                    throw new Error(`Незавершенный квантор: ${quantifier}${variable}`);
+                }
+            }
+            
+            return parseBaseTerm(tokens);
+        }
+        
+        function parseBinaryLeftAssoc(tokens, operator, parseNext, createNode) {
+            let [left, rest] = parseNext(tokens);
+            
+            while (rest.length > 0 && rest[0] === operator) {
+                const [right, nextRest] = parseNext(rest.slice(1));
+                left = createNode(left, right);
+                rest = nextRest;
+            }
+            
+            return [left, rest];
+        }
+        
+        function parseBaseTerm(tokens) {
+            if (tokens.length === 0) {
+                throw new Error("Unexpected end of input");
+            }
+            
+            if (tokens[0] === "(") {
+                const [expr, rest] = parseImpl(tokens.slice(1));
+                if (rest.length === 0 || rest[0] !== ")") throw new Error("Expected closing parenthesis");
+                return [expr, rest.slice(1)];
+            } else if (tokens[0] === "¬") {
+                const [expr, rest] = parseTerm(tokens.slice(1));
+                return [Expr.Not(expr), rest];
+            } else if (tokens[0] === "0") {
+                return [Expr.Bool(false), tokens.slice(1)];
+            } else if (tokens[0] === "1") {
+                return [Expr.Bool(true), tokens.slice(1)];
+            } else if (tokens.length > 0 && !logicalOps.includes(tokens[0])) {
+                if (tokens.length > 1 && tokens[1] === "(") {
+                    const predicateName = tokens[0];
+                    const args = [];
+                    let i = 2;
+                    while (i < tokens.length && tokens[i] !== ")") {
+                        if (tokens[i] === ",") {
+                            i++;
+                            continue;
+                        }
+                        if (tokens[i] === "0" || tokens[i] === "1") {
+                            args.push(Expr.Bool(tokens[i] === "1"));
+                        } else if (!logicalOps.includes(tokens[i])) {
+                            args.push(Expr.Var(tokens[i]));
+                        } else {
+                            throw new Error(`Некорректный аргумент предиката: ${tokens[i]}`);
+                        }
+                        i++;
+                    }
+                    if (i >= tokens.length || tokens[i] !== ")") {
+                        throw new Error("Незакрытая скобка в предикате");
+                    }
+                    return [Expr.Predicate(predicateName, args), tokens.slice(i + 1)];
+                } else {
+                    return [Expr.Var(tokens[0]), tokens.slice(1)];
+                }
+            }
+            throw new Error(`Error in parseBaseTerm: unexpected token "${tokens[0]}"`);
+        }
+        
+        function exprToString(expr, isRoot = false) {
+            switch (expr.type) {
+                case "Var": return expr.varname;
+                case "ForAll": 
+                    const bodyForAll = exprToString(expr.body, false);
+                    const needsParensForAll = expr.body.type !== "Var" && expr.body.type !== "Bool" && 
+                                             expr.body.type !== "Predicate";
+                    return needsParensForAll 
+                        ? `∀${expr.variable}(${bodyForAll})` 
+                        : `∀${expr.variable}${bodyForAll}`;
+                case "Exists": 
+                    const bodyExists = exprToString(expr.body, false);
+                    const needsParensExists = expr.body.type !== "Var" && expr.body.type !== "Bool" && 
+                                             expr.body.type !== "Predicate";
+                    return needsParensExists 
+                        ? `∃${expr.variable}(${bodyExists})` 
+                        : `∃${expr.variable}${bodyExists}`;
+                case "And": 
+                case "Or": 
+                case "Impl": 
+                    const left = exprToString(expr.left, false);
+                    const right = exprToString(expr.right, false);
+                    const result = `(${left}${getOpSymbol(expr.type)}${right})`;
+                    return isRoot ? result.slice(1, -1) : result; // Убираем скобки для корня
+                case "Not": 
+                    const inner = exprToString(expr.expr, false);
+                    const needsParensNot = expr.expr.type !== "Var" && expr.expr.type !== "Bool" && 
+                                          expr.expr.type !== "Predicate";
+                    return needsParensNot 
+                        ? `¬(${inner})` 
+                        : `¬${inner}`;
+                case "Bool": return expr.value ? "1" : "0";
+                case "Predicate": 
+                    const predArgs = expr.args.map(arg => {
+                        if (arg.type === "Var") return arg.varname;
+                        if (arg.type === "Bool") return arg.value ? "1" : "0";
+                        return exprToString(arg, false);
+                    }).join(", ");
+                    return `${expr.name}(${predArgs})`;
+                default: throw new Error("Unknown expression type");
+            }
+        }
+        
+        function getOpSymbol(type) {
+            switch (type) {
+                case "And": return "∧";
+                case "Or": return "∨";
+                case "Impl": return "→";
+                default: return "";
+            }
+        }
+        
+        function needsParens(expr, parentOp) {
+            if (!expr) return false;
+            
+            const precedence = {
+                "ForAll": 1,
+                "Exists": 1,
+                "Impl": 2,
+                "Or": 3,
+                "And": 4,
+                "Not": 5,
+                "Var": 6,
+                "Predicate": 6,
+                "Bool": 6
+            };
+            
+            const exprPrec = precedence[expr.type] || 0;
+            const parentPrec = precedence[parentOp] || 0;
+            
+            return exprPrec < parentPrec;
+        }
+        
+        function parseExpression(str) {
+            try {
+                const tokens = getToken(str, "", []);
+                const expr = parseExpr(tokens);
+                return expr;
+            } catch (error) {
+                throw new Error(`Ошибка парсинга: ${error.message}`);
+            }
+        }
+        
+        class TableauNode {
+            constructor(left = [], right = [], parent = null, isClosed = false, usedTerms = null) {
+                this.left = left.slice();
+                this.right = right.slice();
+                this.parent = parent;
+                this.children = [];
+                this.isClosed = isClosed;
+                this.appliedRule = null;
+                this.id = 'node-' + Math.random().toString(36).substr(2, 9);
+                this.ruleName = null;
+                this.oldState = null;
+                this.usedTerms = usedTerms ? new Set(usedTerms) : new Set();
+                
+                if (parent && parent.processedUniversalsInBranch) {
+                    this.processedUniversalsInBranch = new Set(parent.processedUniversalsInBranch);
+                } else {
+                    this.processedUniversalsInBranch = new Set();
+                }
+            }
+            
+            getLabel() {
+                if (this.isClosed) {
+                    return `Закрытая таблица\n${this.getTableauState()}`;
+                } else {
+                    return this.getTableauState();
+                }
+            }
+            
+            getTableauState() {
+                const leftFormulas = this.left.map(f => exprToString(f));
+                const rightFormulas = this.right.map(f => exprToString(f));
+                
+                let stateLabel = `< ${leftFormulas.join(", ")} | ${rightFormulas.join(", ")} >`;
+                if (leftFormulas.length === 0 && rightFormulas.length === 0) {
+                    stateLabel = "< | >";
+                }
+                
+                return stateLabel;
+            }
+        }
+        
+        class SemanticTableau {
+            constructor(formula) {
+                this.root = new TableauNode();
+                this.root.right = [formula];
+                this.root.oldState = { left: [], right: [formula] };
+                this.root.ruleName = "Start";
+                this.root.usedTerms = this.collectTermsFromExpr(formula);
+                this.nodes = [this.root];
+                this.nextConstantIndex = 1;
+                this.globalForAllCounter = new Map();
+            }
+            
+            applyLeftAnd(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "And") return false;
+                
+                const newLeft = [...node.left];
+                newLeft.splice(formulaIndex, 1);
+                newLeft.push(formula.left, formula.right);
+                
+                const newNode = new TableauNode(newLeft, [...node.right], node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Left-∧";
+                newNode.oldState = { left: [formula], right: [] };
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+            
+            applyRightAnd(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "And") return false;
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                
+                const leftNode = new TableauNode([...node.left], [...newRight, formula.left], node);
+                const rightNode = new TableauNode([...node.left], [...newRight, formula.right], node);
+                
+                leftNode.appliedRule = formula;
+                leftNode.ruleName = "Right-∧";
+                leftNode.oldState = { left: [], right: [formula] };
+                
+                rightNode.appliedRule = formula;
+                rightNode.ruleName = "Right-∧";
+                rightNode.oldState = { left: [], right: [formula] };
+                
+                this.addChildren(node, [leftNode, rightNode]);
+                return true;
+            }
+            
+            applyLeftOr(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "Or") return false;
+                
+                const newLeft = [...node.left];
+                newLeft.splice(formulaIndex, 1);
+                
+                const leftNode = new TableauNode([...newLeft, formula.left], [...node.right], node);
+                const rightNode = new TableauNode([...newLeft, formula.right], [...node.right], node);
+                
+                leftNode.appliedRule = formula;
+                leftNode.ruleName = "Left-∨";
+                leftNode.oldState = { left: [formula], right: [] };
+                
+                rightNode.appliedRule = formula;
+                rightNode.ruleName = "Left-∨";
+                rightNode.oldState = { left: [formula], right: [] };
+                
+                this.addChildren(node, [leftNode, rightNode]);
+                return true;
+            }
+            
+            applyRightOr(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "Or") return false;
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                newRight.push(formula.left, formula.right);
+                
+                const newNode = new TableauNode([...node.left], newRight, node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Right-∨";
+                newNode.oldState = { left: [], right: [formula] };
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+            
+            applyLeftImpl(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "Impl") return false;
+                
+                const newLeft = [...node.left];
+                newLeft.splice(formulaIndex, 1);
+                
+                const leftNode = new TableauNode([...newLeft], [...node.right, formula.left], node);
+                const rightNode = new TableauNode([...newLeft, formula.right], [...node.right], node);
+                
+                leftNode.appliedRule = formula;
+                leftNode.ruleName = "Left-→";
+                leftNode.oldState = { left: [formula], right: [] };
+                
+                rightNode.appliedRule = formula;
+                rightNode.ruleName = "Left-→";
+                rightNode.oldState = { left: [formula], right: [] };
+                
+                this.addChildren(node, [leftNode, rightNode]);
+                return true;
+            }
+            
+            applyRightImpl(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "Impl") return false;
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                
+                const newNode = new TableauNode(
+                    [...node.left, formula.left],
+                    [...newRight, formula.right],
+                    node
+                );
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Right-→";
+                newNode.oldState = { left: [], right: [formula] };
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+            
+            applyLeftNot(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "Not") return false;
+                
+                const newLeft = [...node.left];
+                newLeft.splice(formulaIndex, 1);
+                
+                const newNode = new TableauNode(newLeft, [...node.right, formula.expr], node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Left-¬";
+                newNode.oldState = { left: [formula], right: [] };
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+            
+            applyRightNot(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "Not") return false;
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                
+                const newNode = new TableauNode([...node.left, formula.expr], newRight, node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Right-¬";
+                newNode.oldState = { left: [], right: [formula] };
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+
+            applyRightForAll(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "ForAll") return false;
+                const newConstant = `c${this.nextConstantIndex++}`;
+                const newFormula = this.substitute(formula.body, formula.variable, newConstant);
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                newRight.push(newFormula);
+                
+                const newNode = new TableauNode([...node.left], newRight, node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Right-∀";
+                newNode.oldState = { left: [], right: [formula] };
+                
+                newNode.usedTerms = new Set(node.usedTerms || new Set());
+                newNode.usedTerms.add(newConstant);
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+
+            applyLeftExists(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "Exists") return false;
+                
+                const formulaKey = exprToString(formula);
+                if (node.processedExistentialsInBranch && node.processedExistentialsInBranch.has(formulaKey)) {
+                    return false;
+                }
+                
+                const newConstant = `c${this.nextConstantIndex++}`;
+                const newFormula = this.substitute(formula.body, formula.variable, newConstant);
+                const newLeft = [...node.left];
+                newLeft.splice(formulaIndex, 1);
+                newLeft.push(newFormula);
+                
+                const newNode = new TableauNode(newLeft, [...node.right], node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = "Left-∃";
+                newNode.oldState = { left: [formula], right: [] };
+                
+                newNode.usedTerms = new Set(node.usedTerms || new Set());
+                newNode.usedTerms.add(newConstant);
+                
+                if (!newNode.processedExistentialsInBranch) {
+                    newNode.processedExistentialsInBranch = new Set();
+                }
+                newNode.processedExistentialsInBranch.add(formulaKey);
+                
+                this.addChild(node, newNode);
+                return true;
+            }
+
+            applyRightExists(node, formulaIndex) {
+                const formula = node.right[formulaIndex];
+                if (formula.type !== "Exists") return false;
+                
+                const formulaKey = exprToString(formula);
+                
+                if (node.processedExistentialsInBranch && node.processedExistentialsInBranch.has(formulaKey)) {
+                    return false;
+                }
+                const availableTerms = this.collectAllTerms(node);
+                if (availableTerms.has(formula.variable)) {
+                    availableTerms.delete(formula.variable);
+                }
+                
+                if (availableTerms.size === 0) {
+                    const newConstant = `c${this.nextConstantIndex++}`;
+                    availableTerms.add(newConstant);
+                }
+                
+                const newRight = [...node.right];
+                newRight.splice(formulaIndex, 1);
+                
+                const children = [];
+                
+                availableTerms.forEach(term => {
+                    const newFormula = this.substitute(formula.body, formula.variable, term);
+                    
+                    const childNode = new TableauNode([...node.left], [...newRight, newFormula], node);
+                    childNode.appliedRule = formula;
+                    childNode.ruleName = `Right-∃ (терм: ${term})`;
+                    childNode.oldState = { left: [], right: [formula] };
+                    
+                    childNode.usedTerms = new Set(node.usedTerms || new Set());
+                    if (term.startsWith('c')) {
+                        childNode.usedTerms.add(term);
+                    }
+                    
+                    if (!childNode.processedExistentialsInBranch) {
+                        childNode.processedExistentialsInBranch = new Set();
+                    }
+                    childNode.processedExistentialsInBranch.add(formulaKey);
+                    
+                    children.push(childNode);
+                });
+                
+                this.addChildren(node, children);
+                return true;
+            }
+            
+            applyLeftForAll(node, formulaIndex) {
+                const formula = node.left[formulaIndex];
+                if (formula.type !== "ForAll") return false;
+                
+                const formulaKey = exprToString(formula);
+                
+                console.log(`Проверяем Left-∀ для ${formulaKey} в узле ${node.id}`);
+                
+                if (node.processedUniversalsInBranch.has(formulaKey)) {
+                    console.log(`Формула ${formulaKey} уже обрабатывалась в этой ветке, ПРОПУСКАЕМ`);
+                    return false;
+                }
+                
+                const availableTerms = this.collectAllTerms(node);
+                console.log(`Доступные свободные термы: ${Array.from(availableTerms).join(', ')}`);
+                
+                if (availableTerms.has(formula.variable)) {
+                    console.log(`Удаляем переменную квантора ${formula.variable} из доступных термов`);
+                    availableTerms.delete(formula.variable);
+                }
+                if (availableTerms.size === 0) {
+                    const newConstant = `c${this.nextConstantIndex++}`;
+                    availableTerms.add(newConstant);
+                    console.log(`Создана новая константа: ${newConstant}`);
+                }
+                const existingSubstitutions = new Set();
+                node.left.forEach(f => {
+                    if (f !== formula) { // Не сама универсальная формула
+                        existingSubstitutions.add(exprToString(f));
+                    }
+                });
+                
+                let needToAdd = false;
+                availableTerms.forEach(term => {
+                    const expectedFormula = this.substitute(formula.body, formula.variable, term);
+                    const expectedStr = exprToString(expectedFormula);
+                    if (!existingSubstitutions.has(expectedStr)) {
+                        needToAdd = true;
+                    }
+                });
+                
+                if (!needToAdd && existingSubstitutions.size > 0) {
+                    console.log(`Все подстановки для ${formulaKey} уже существуют, ПРОПУСКАЕМ`);
+                    node.processedUniversalsInBranch.add(formulaKey);
+                    return false;
+                }
+                
+                console.log(`ПРИМЕНЯЕМ Left-∀ к ${formulaKey}`);
+                
+                const newLeft = [...node.left];
+                let addedCount = 0;
+                
+                availableTerms.forEach(term => {
+                    const newFormula = this.substitute(formula.body, formula.variable, term);
+                    const newFormulaStr = exprToString(newFormula);
+                    
+                    const alreadyExists = newLeft.some(f => exprToString(f) === newFormulaStr);
+                    if (!alreadyExists) {
+                        newLeft.push(newFormula);
+                        addedCount++;
+                        console.log(`Добавлена новая подстановка с термом ${term}: ${newFormulaStr}`);
+                    } else {
+                        console.log(`Подстановка с термом ${term} уже существует: ${newFormulaStr}`);
+                    }
+                });
+                
+                if (addedCount === 0) {
+                    console.log(`Нет новых подстановок для добавления`);
+                    node.processedUniversalsInBranch.add(formulaKey);
+                    return false;
+                }
+                
+                const newNode = new TableauNode(newLeft, [...node.right], node);
+                newNode.appliedRule = formula;
+                newNode.ruleName = `Left-∀`;
+                newNode.oldState = { left: [formula], right: [] };
+                newNode.processedUniversalsInBranch.add(formulaKey);
+                
+                newNode.usedTerms = new Set(node.usedTerms);
+                availableTerms.forEach(term => {
+                    if (term.startsWith('c')) {
+                        newNode.usedTerms.add(term);
+                    }
+                });
+                
+                this.addChild(node, newNode);
+                console.log(`Создан новый узел ${newNode.id} с ${addedCount} новыми подстановками`);
+                return true;
+            }
+
+            checkClosure(node) {
+                for (const leftFormula of node.left) {
+                    for (const rightFormula of node.right) {
+                        if (this.areEqual(leftFormula, rightFormula)) {
+                            console.log(`Закрытие: найдено противоречие ${exprToString(leftFormula)}`);
+                            node.isClosed = true;
+                            return true;
+                        }
+                    }
+                }
+                
+                const leftPredicates = new Set();
+                node.left.forEach(f => {
+                    if (f.type === "Predicate") {
+                        leftPredicates.add(exprToString(f));
+                    }
+                });
+                
+                node.right.forEach(f => {
+                    if (f.type === "Predicate" && leftPredicates.has(exprToString(f))) {
+                        console.log(`Закрытие: предикат ${exprToString(f)} противоречив`);
+                        node.isClosed = true;
+                        return true;
+                    }
+                });
+                
+                const leftFormulasStr = new Set(node.left.map(f => exprToString(f)));
+                const rightFormulasStr = new Set(node.right.map(f => exprToString(f)));
+                
+                for (const leftStr of leftFormulasStr) {
+                    if (leftStr.startsWith('¬')) {
+                        const withoutNeg = leftStr.substring(1);
+                        if (rightFormulasStr.has(withoutNeg)) {
+                            console.log(`Закрытие: ¬${withoutNeg} vs ${withoutNeg}`);
+                            node.isClosed = true;
+                            return true;
+                        }
+                    }
+                }
+                
+                for (const rightStr of rightFormulasStr) {
+                    if (rightStr.startsWith('¬')) {
+                        const withoutNeg = rightStr.substring(1);
+                        if (leftFormulasStr.has(withoutNeg)) {
+                            console.log(`Закрытие: ${withoutNeg} vs ¬${withoutNeg}`);
+                            node.isClosed = true;
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            areEqual(expr1, expr2) {
+                if (expr1.type !== expr2.type) return false;
+                
+                if (expr1.type === "Var") {
+                    return expr1.varname === expr2.varname;
+                }
+                if (expr1.type === "Bool") {
+                    return expr1.value === expr2.value;
+                }
+                if (expr1.type === "Predicate") {
+                    if (expr1.name !== expr2.name) return false;
+                    if (expr1.args.length !== expr2.args.length) return false;
+                    for (let i = 0; i < expr1.args.length; i++) {
+                        if (!this.areEqual(expr1.args[i], expr2.args[i])) return false;
+                    }
+                    return true;
+                }
+                
+                return exprToString(expr1) === exprToString(expr2);
+            }
+            
+            addChild(parent, child) {
+                child.parent = parent;
+                parent.children.push(child);
+                this.nodes.push(child);
+            }
+            
+            addChildren(parent, children) {
+                children.forEach(child => {
+                    child.parent = parent;
+                    parent.children.push(child);
+                    this.nodes.push(child);
+                });
+            }
+
+            collectTermsFromExpr(expr, boundVars = new Set(), depth = 0) {
+                if (depth > 100) {
+                    console.warn("Превышена глубина рекурсии при сборе термов");
+                    return new Set();
+                }
+                
+                const terms = new Set();
+                
+                switch (expr.type) {
+                    case "Var":
+                        if (!boundVars.has(expr.varname)) {
+                            terms.add(expr.varname);
+                        }
+                        break;
+                    case "ForAll":
+                    case "Exists":
+                        const newBoundVars = new Set(boundVars);
+                        newBoundVars.add(expr.variable);
+                        const bodyTerms = this.collectTermsFromExpr(expr.body, newBoundVars, depth + 1);
+                        bodyTerms.forEach(term => terms.add(term));
+                        break;
+                    case "And":
+                    case "Or":
+                    case "Impl":
+                        const leftTerms = this.collectTermsFromExpr(expr.left, boundVars, depth + 1);
+                        const rightTerms = this.collectTermsFromExpr(expr.right, boundVars, depth + 1);
+                        leftTerms.forEach(term => terms.add(term));
+                        rightTerms.forEach(term => terms.add(term));
+                        break;
+                    case "Not":
+                        const innerTerms = this.collectTermsFromExpr(expr.expr, boundVars, depth + 1);
+                        innerTerms.forEach(term => terms.add(term));
+                        break;
+                    case "Bool":
+                        break;
+                    case "Predicate":
+                        expr.args.forEach(arg => {
+                            if (arg.type === "Var" && !boundVars.has(arg.varname)) {
+                                terms.add(arg.varname);
+                            }
+                            const argTerms = this.collectTermsFromExpr(arg, boundVars, depth + 1);
+                            argTerms.forEach(term => terms.add(term));
+                        });
+                        break;
+                }
+                
+                return terms;
+            }
+
+            collectAllTerms(node) {
+                const allTerms = new Set();
+                const boundVars = new Set();
+                
+                const analyzeExpr = (expr, currentBoundVars) => {
+                    const localBoundVars = new Set(currentBoundVars);
+                    
+                    switch (expr.type) {
+                        case "Var":
+                            if (!localBoundVars.has(expr.varname)) {
+                                allTerms.add(expr.varname);
+                            }
+                            break;
+                            
+                        case "ForAll":
+                        case "Exists":
+                            localBoundVars.add(expr.variable);
+                            analyzeExpr(expr.body, localBoundVars);
+                            break;
+                            
+                        case "Predicate":
+                            expr.args.forEach(arg => {
+                                if (arg.type === "Var") {
+                                    if (!localBoundVars.has(arg.varname)) {
+                                        allTerms.add(arg.varname);
+                                    }
+                                } else {
+                                    analyzeExpr(arg, localBoundVars);
+                                }
+                            });
+                            break;
+                            
+                        case "And":
+                        case "Or":
+                        case "Impl":
+                            analyzeExpr(expr.left, localBoundVars);
+                            analyzeExpr(expr.right, localBoundVars);
+                            break;
+                            
+                        case "Not":
+                            analyzeExpr(expr.expr, localBoundVars);
+                            break;
+                            
+                        case "Bool":
+                            break;
+                    }
+                };
+                
+                node.left.forEach(expr => analyzeExpr(expr, boundVars));
+                node.right.forEach(expr => analyzeExpr(expr, boundVars));
+                
+                if (node.usedTerms) {
+                    node.usedTerms.forEach(term => {
+                        if (term.startsWith('c')) {
+                            allTerms.add(term);
+                        }
+                    });
+                }
+                
+                const extractConstants = (expr) => {
+                    if (expr.type === "Predicate") {
+                        expr.args.forEach(arg => {
+                            if (arg.type === "Var" && arg.varname.startsWith('c')) {
+                                allTerms.add(arg.varname);
+                            }
+                        });
+                    } else if (expr.type === "ForAll" || expr.type === "Exists") {
+                        extractConstants(expr.body);
+                    } else if (expr.type === "And" || expr.type === "Or" || expr.type === "Impl") {
+                        extractConstants(expr.left);
+                        extractConstants(expr.right);
+                    } else if (expr.type === "Not") {
+                        extractConstants(expr.expr);
+                    }
+                };
+                
+                node.left.forEach(extractConstants);
+                node.right.forEach(extractConstants);
+                
+                console.log(`Узел ${node.id}: ВСЕ термы = ${Array.from(allTerms).join(', ')}`);
+                
+                return allTerms;
+            }
+
+            substitute(expr, variable, term, boundVars = new Set()) {
+                switch (expr.type) {
+                    case "Var":
+                        if (expr.varname === variable && !boundVars.has(variable)) {
+                            return Expr.Var(term);
+                        }
+                        return expr;
+                        
+                    case "ForAll":
+                    case "Exists":
+                        if (expr.variable === variable) {
+                            return expr;
+                        }
+                        const newBoundVars = new Set(boundVars);
+                        newBoundVars.add(expr.variable);
+                        const newBody = this.substitute(expr.body, variable, term, newBoundVars);
+                        return expr.type === "ForAll" 
+                            ? Expr.ForAll(expr.variable, newBody)
+                            : Expr.Exists(expr.variable, newBody);
+                            
+                    case "And":
+                        return Expr.And(
+                            this.substitute(expr.left, variable, term, boundVars),
+                            this.substitute(expr.right, variable, term, boundVars)
+                        );
+                        
+                    case "Or":
+                        return Expr.Or(
+                            this.substitute(expr.left, variable, term, boundVars),
+                            this.substitute(expr.right, variable, term, boundVars)
+                        );
+                        
+                    case "Impl":
+                        return Expr.Impl(
+                            this.substitute(expr.left, variable, term, boundVars),
+                            this.substitute(expr.right, variable, term, boundVars)
+                        );
+                        
+                    case "Not":
+                        return Expr.Not(this.substitute(expr.expr, variable, term, boundVars));
+                        
+                    case "Bool":
+                        return expr;
+                        
+                    case "Predicate":
+                        const newArgs = expr.args.map(arg => {
+                            if (arg.type === "Var" && arg.varname === variable && !boundVars.has(variable)) {
+                                return Expr.Var(term);
+                            }
+                            return arg;
+                        });
+                        return Expr.Predicate(expr.name, newArgs);
+                        
+                    default:
+                        throw new Error("Unknown expression type in substitute");
+                }
+            }
+            
+            build() {
+                let changed = true;
+                let iterationCount = 0;
+                const maxIterations = 50;
+                
+                while (changed && iterationCount < maxIterations) {
+                    changed = false;
+                    iterationCount++;
+                    
+                    console.log(`=== Итерация ${iterationCount} ===`);
+                    
+                    for (const node of this.nodes) {
+                        if (node.isClosed || node.children.length > 0) continue;
+                        
+                        console.log(`Обрабатываем узел ${node.id}`);
+                        console.log(`Состояние: ${node.getTableauState()}`);
+                        
+                        if (this.checkClosure(node)) {
+                            console.log(`Узел ${node.id} закрыт`);
+                            changed = true;
+                            continue;
+                        }
+                        
+                        let otherRuleApplied = this.tryOtherRules(node);
+                        
+                        if (otherRuleApplied) {
+                            console.log(`Применено другое правило к узлу ${node.id}`);
+                            changed = true;
+                            continue;
+                        }
+                        
+                        console.log(`Другие правила не применились, пробуем Left-∀`);
+                        let leftForAllApplied = false;
+                        for (let i = 0; i < node.left.length && !leftForAllApplied; i++) {
+                            const formula = node.left[i];
+                            if (formula.type === "ForAll") {
+                                leftForAllApplied = this.applyLeftForAll(node, i);
+                            }
+                        }
+
+			console.log(`Другие правила не применились, пробуем Right-E`);
+                        let rightExistsApplied = false;
+		        for (let i = 0; i < node.right.length && !rightExistsApplied; i++) {
+                            const formula = node.right[i];
+                            if (formula.type === "Exists") {
+                                rightExistsApplied = this.applyRightExists(node, i);
+                            }
+                        }
+                        
+                        if (leftForAllApplied || rightExistsApplied) {
+                            changed = true;
+                        } else {
+                            console.log(`Узел ${node.id} стал открытым листом`);
+                        }
+                    }
+                    
+                    if (this.nodes.length > 100) {
+                        console.error("Слишком много узлов! Прерываем построение.");
+                        break;
+                    }
+                }
+                console.log(`Построение завершено. Итераций: ${iterationCount}, узлов: ${this.nodes.length}`);
+            }
+
+            tryOtherRules(node) {
+                for (let i = 0; i < node.left.length; i++) {
+                    const formula = node.left[i];
+                    if (formula.type === "And") return this.applyLeftAnd(node, i);
+                    if (formula.type === "Not") return this.applyLeftNot(node, i);
+                    if (formula.type === "Exists") return this.applyLeftExists(node, i);
+                }
+                
+                for (let i = 0; i < node.right.length; i++) {
+                    const formula = node.right[i];
+                    if (formula.type === "Or") return this.applyRightOr(node, i);
+                    if (formula.type === "Not") return this.applyRightNot(node, i);
+                    if (formula.type === "Impl") return this.applyRightImpl(node, i);
+                    if (formula.type === "ForAll") return this.applyRightForAll(node, i);
+                }
+                
+                for (let i = 0; i < node.left.length; i++) {
+                    const formula = node.left[i];
+                    if (formula.type === "Or") return this.applyLeftOr(node, i);
+                    if (formula.type === "Impl") return this.applyLeftImpl(node, i);
+                }
+                
+                for (let i = 0; i < node.right.length; i++) {
+                    const formula = node.right[i];
+                    if (formula.type === "And") return this.applyRightAnd(node, i);
+                }
+                
+                return false;
+            }
+            
+            getStats() {
+                const leafNodes = this.nodes.filter(node => node.children.length === 0);
+                const closedLeaves = leafNodes.filter(node => node.isClosed);
+                const openLeaves = leafNodes.filter(node => !node.isClosed);
+                
+                return {
+                    totalNodes: this.nodes.length,
+                    leafNodes: leafNodes.length,
+                    closedLeaves: closedLeaves.length,
+                    openLeaves: openLeaves.length,
+                    isTautology: leafNodes.length > 0 && leafNodes.every(node => node.isClosed)
+                };
+            }
+        }
+
+        class TreeVisualizer {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.wrapper = null;
+                this.visualNodes = [];
+                this.zoom = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.isDragging = false;
+                this.dragStartX = 0;
+                this.dragStartY = 0;
+                this.startPanX = 0;
+                this.startPanY = 0;
+                this.createZoomControls();
+                this.setupZoomEventListeners();
+            }
+            
+            createZoomControls() {
+                this.zoomControls = document.createElement('div');
+                this.zoomControls.className = 'zoom-controls';
+                
+                this.zoomIn = document.createElement('div');
+                this.zoomIn.className = 'zoom-button';
+                this.zoomIn.textContent = '+';
+                
+                this.zoomOut = document.createElement('div');
+                this.zoomOut.className = 'zoom-button';
+                this.zoomOut.textContent = '-';
+                
+                this.zoomReset = document.createElement('div');
+                this.zoomReset.className = 'zoom-button';
+                this.zoomReset.textContent = '↺';
+                
+                this.zoomControls.appendChild(this.zoomIn);
+                this.zoomControls.appendChild(this.zoomOut);
+                this.zoomControls.appendChild(this.zoomReset);
+                
+                this.container.appendChild(this.zoomControls);
+            }
+            
+            setupZoomEventListeners() {
+                this.zoomIn.addEventListener('click', () => {
+                    this.zoom = Math.min(2, this.zoom + 0.1);
+                    this.updateTransform();
+                });
+                
+                this.zoomOut.addEventListener('click', () => {
+                    this.zoom = Math.max(0.3, this.zoom - 0.1);
+                    this.updateTransform();
+                });
+                
+                this.zoomReset.addEventListener('click', () => {
+                    this.zoom = 1;
+                    this.panX = 0;
+                    this.panY = 0;
+                    this.updateTransform();
+                });
+            }
+            
+            visualize(tableau) {
+                const zoomControls = this.zoomControls;
+                this.container.innerHTML = '';
+                this.container.appendChild(zoomControls);
+                this.wrapper = document.createElement('div');
+                this.wrapper.className = 'tree-wrapper';
+                this.wrapper.style.transform = `scale(${this.zoom}) translate(${this.panX}px, ${this.panY}px)`;
+                this.wrapper.style.transformOrigin = 'center center';
+                this.container.appendChild(this.wrapper);
+                this.createVisualNodes(tableau);
+                this.createTemporaryNodesForMeasurement();
+                this.calculatePositions();
+                this.drawEdges();
+                this.drawNodes();
+                this.setupDragEventListeners();
+                this.showResult(tableau.getStats());
+            }
+            
+            createVisualNodes(tableau) {
+                this.visualNodes = [];
+                const nodeMap = new Map();
+                
+                tableau.nodes.forEach(tableauNode => {
+                    const visualNode = {
+                        id: tableauNode.id,
+                        tableauNode: tableauNode,
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        children: [],
+                        parent: null
+                    };
+                    
+                    this.visualNodes.push(visualNode);
+                    nodeMap.set(tableauNode.id, visualNode);
+                });
+                
+                tableau.nodes.forEach(tableauNode => {
+                    const visualNode = nodeMap.get(tableauNode.id);
+                    if (tableauNode.parent) {
+                        visualNode.parent = nodeMap.get(tableauNode.parent.id);
+                        if (visualNode.parent) {
+                            visualNode.parent.children.push(visualNode);
+                        }
+                    }
+                });
+            }
+            
+            createTemporaryNodesForMeasurement() {
+                for (const visualNode of this.visualNodes) {
+                    const tempNode = document.createElement('div');
+                    tempNode.className = 'node';
+                    tempNode.style.position = 'absolute';
+                    tempNode.style.visibility = 'hidden';
+                    tempNode.style.padding = '3px 5px';
+                    tempNode.style.fontSize = '10px';
+                    tempNode.style.lineHeight = '1.1';
+                    tempNode.style.border = '1.5px solid #000';
+                    tempNode.style.borderRadius = '2px';
+                    tempNode.style.minWidth = '40px';
+                    tempNode.style.minHeight = '25px';
+                    tempNode.style.display = 'flex';
+                    tempNode.style.alignItems = 'center';
+                    tempNode.style.justifyContent = 'center';
+                    tempNode.style.textAlign = 'center';
+                    tempNode.style.whiteSpace = 'pre-wrap';
+                    tempNode.style.wordBreak = 'break-word';
+                    
+                    const content = document.createElement('div');
+                    content.className = 'node-content';
+                    content.textContent = visualNode.tableauNode.getLabel();
+                    tempNode.appendChild(content);
+                    
+                    this.wrapper.appendChild(tempNode);
+                    
+                    const rect = tempNode.getBoundingClientRect();
+                    visualNode.width = Math.max(rect.width, 50);
+                    visualNode.height = Math.max(rect.height, 35);
+                    
+                    this.wrapper.removeChild(tempNode);
+                }
+            }
+
+            calculatePositions() {
+                if (this.visualNodes.length === 0) return;
+                
+                const root = this.visualNodes.find(node => !node.parent);
+                if (!root) return;
+                
+                const calculateSubtreeWidth = (node) => {
+                    if (!node) return 0;
+                    
+                    if (node.children.length === 0) {
+                        node.subtreeWidth = node.width;
+                        return node.subtreeWidth;
+                    }
+                    
+                    let totalWidth = 0;
+                    for (const child of node.children) {
+                        totalWidth += calculateSubtreeWidth(child);
+                    }
+                    
+                    if (node.children.length > 1) {
+                        totalWidth += (node.children.length - 1) * 40;
+                    }
+                    
+                    node.subtreeWidth = Math.max(node.width, totalWidth);
+                    return node.subtreeWidth;
+                };
+                
+                const positionNodes = (node, x, y, offset) => {
+                    if (!node) return;
+                    
+                    node.x = x;
+                    node.y = y;
+                    
+                    if (node.children.length === 0) {
+                        return;
+                    }
+                    
+                    const childSpacing = 40;
+                    let currentX = x - node.subtreeWidth / 2;
+                    
+                    for (const child of node.children) {
+                        const childWidth = child.subtreeWidth;
+                        const childX = currentX + childWidth / 2;
+                        const childY = y + 80;
+                        
+                        positionNodes(child, childX, childY, currentX);
+                        currentX += childWidth + childSpacing;
+                    }
+                };
+                
+                calculateSubtreeWidth(root);
+                const startX = Math.max(400, root.subtreeWidth / 2 + 100);
+                positionNodes(root, startX, 40, 0);
+            }
+            
+            drawEdges() {
+                for (const visualNode of this.visualNodes) {
+                    if (visualNode.parent) {
+                        this.drawEdge(visualNode.parent, visualNode);
+                    }
+                }
+            }
+            
+            drawEdge(fromNode, toNode) {
+                const fromX = fromNode.x;
+                const fromY = fromNode.y + fromNode.height/2;
+                const toX = toNode.x;
+                const toY = toNode.y - toNode.height/2;
+                
+                const dx = toX - fromX;
+                const dy = toY - fromY;
+                const length = Math.sqrt(dx*dx + dy*dy);
+                
+                if (length === 0) return;
+                
+                const nx = dx / length;
+                const ny = dy / length;
+                
+                const fromOffset = 2;
+                const toOffset = 2;
+                
+                const startX = fromX + nx * fromOffset;
+                const startY = fromY + ny * fromOffset;
+                const endX = toX - nx * toOffset;
+                const endY = toY - ny * toOffset;
+                
+                const lineDx = endX - startX;
+                const lineDy = endY - startY;
+                const lineLength = Math.sqrt(lineDx*lineDx + lineDy*lineDy);
+                const lineAngle = Math.atan2(lineDy, lineDx) * 180 / Math.PI;
+                
+                const line = document.createElement('div');
+                line.className = 'edge-line';
+                line.style.width = `${lineLength}px`;
+                line.style.height = '1.5px';
+                line.style.left = `${startX}px`;
+                line.style.top = `${startY}px`;
+                line.style.transform = `rotate(${lineAngle}deg)`;
+                line.style.backgroundColor = '#000';
+                
+                this.wrapper.appendChild(line);
+                
+                const ruleName = toNode.tableauNode.ruleName;
+                if (ruleName && ruleName !== "Start") {
+                    const label = document.createElement('div');
+                    label.className = 'edge-label';
+                    label.textContent = ruleName;
+                    let labelPosRatio = 0.5;
+                    
+                    if (lineLength < 60) {
+                        labelPosRatio = 0.6;
+                    }
+                    
+                    const labelX = startX + lineDx * labelPosRatio;
+                    const labelY = startY + lineDy * labelPosRatio;
+                    
+                    label.style.left = `${labelX}px`;
+                    label.style.top = `${labelY}px`;
+                    
+                    this.wrapper.appendChild(label);
+                }
+            }
+            
+            drawNodes() {
+                for (const visualNode of this.visualNodes) {
+                    const nodeElement = document.createElement('div');
+                    nodeElement.className = 'node';
+                    
+                    nodeElement.style.left = `${visualNode.x - visualNode.width/2}px`;
+                    nodeElement.style.top = `${visualNode.y - visualNode.height/2}px`;
+                    nodeElement.style.width = `${visualNode.width}px`;
+                    nodeElement.style.height = `${visualNode.height}px`;
+                    
+                    const content = document.createElement('div');
+                    content.className = 'node-content';
+                    content.textContent = visualNode.tableauNode.getLabel();
+                    
+                    nodeElement.appendChild(content);
+                    this.wrapper.appendChild(nodeElement);
+                }
+            }
+            
+            showResult(stats) {
+                const resultInfo = document.getElementById('result-info');
+                const resultText = document.getElementById('result-text');
+                
+                resultInfo.style.display = 'block';
+                
+                if (stats.isTautology) {
+                    resultText.innerHTML = `Формула является общезначимой.`;
+                } else {
+                    resultText.innerHTML = `Формула не является общезначимой.`;
+                }
+            }
+            
+            setupDragEventListeners() {
+                this.container.addEventListener('mousedown', (e) => {
+                    if (!e.target.classList.contains('node') && 
+                        !e.target.classList.contains('zoom-button') &&
+                        !e.target.closest('.zoom-controls')) {
+                        this.isDragging = true;
+                        this.dragStartX = e.clientX;
+                        this.dragStartY = e.clientY;
+                        this.startPanX = this.panX;
+                        this.startPanY = this.panY;
+                        this.container.style.cursor = 'grabbing';
+                    }
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (this.isDragging) {
+                        const dx = e.clientX - this.dragStartX;
+                        const dy = e.clientY - this.dragStartY;
+                        this.panX = this.startPanX + dx / this.zoom;
+                        this.panY = this.startPanY + dy / this.zoom;
+                        this.updateTransform();
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    this.isDragging = false;
+                    this.container.style.cursor = 'default';
+                });
+                
+                this.container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    this.zoom = Math.max(0.3, Math.min(2, this.zoom + delta));
+                    this.updateTransform();
+                });
+            }
+            
+            updateTransform() {
+                if (this.wrapper) {
+                    this.wrapper.style.transform = `scale(${this.zoom}) translate(${this.panX}px, ${this.panY}px)`;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputField = document.getElementById('input-formula');
+            const clearButton = document.getElementById('clear-button');
+            const buildButton = document.getElementById('build-tree');
+            const visualizer = new TreeVisualizer('tree-container');
+            
+            function insertSymbol(symbol) {
+                const startPos = inputField.selectionStart;
+                const endPos = inputField.selectionEnd;
+                const currentValue = inputField.value;
+                
+                inputField.value = currentValue.substring(0, startPos) + symbol + currentValue.substring(endPos);
+                
+                setTimeout(() => {
+                    inputField.selectionStart = inputField.selectionEnd = startPos + symbol.length;
+                    inputField.focus();
+                }, 0);
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('symbol-button')) {
+                    const symbol = e.target.getAttribute('data-symbol');
+                    insertSymbol(symbol);
+                    e.target.blur();
+                }
+            });
+            
+            clearButton.addEventListener('click', function() {
+                inputField.value = '';
+                inputField.focus();
+                document.getElementById('result-info').style.display = 'none';
+            });
+            
+            buildButton.addEventListener('click', function() {
+                const expression = inputField.value.trim();
+                
+                if (expression === '') {
+                    alert("Пожалуйста, введите формулу");
+                    return;
+                }
+                
+                try {
+                    buildTree(expression);
+                } catch (error) {
+                    alert("Ошибка: " + error.message);
+                }
+            });
+            
+            function buildTree(expression) {
+                try {
+                    const formula = parseExpression(expression);
+                    const tableau = new SemanticTableau(formula);
+                    tableau.build();
+                    visualizer.visualize(tableau);
+                    
+                } catch (error) {
+                    alert(`Ошибка при построении дерева: ${error.message}`);
+                }
+            }
+            inputField.focus();
+            inputField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    buildButton.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
